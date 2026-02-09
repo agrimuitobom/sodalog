@@ -3,10 +3,12 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { getRecord, deleteRecord } from "@/lib/records";
+import { getRecord, deleteRecord, updateRecordColorAnalysis } from "@/lib/records";
 import { GrowthRecord } from "@/types/record";
 import { FertilizerDetail } from "@/types/record";
-import { ArrowLeft, Trash2, Calendar, MapPin, Leaf } from "lucide-react";
+import { analyzeImageColor, ColorAnalysisResult } from "@/lib/colorAnalysis";
+import ColorAnalysisDisplay from "@/components/ColorAnalysisDisplay";
+import { ArrowLeft, Trash2, Calendar, MapPin, Leaf, Palette, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -24,6 +26,8 @@ export default function RecordDetailPage() {
   const [record, setRecord] = useState<GrowthRecord | null>(null);
   const [loadingRecord, setLoadingRecord] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [colorAnalysis, setColorAnalysis] = useState<ColorAnalysisResult | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/");
@@ -34,6 +38,7 @@ export default function RecordDetailPage() {
     if (id) {
       getRecord(id).then((r) => {
         setRecord(r);
+        if (r?.colorAnalysis) setColorAnalysis(r.colorAnalysis);
         setLoadingRecord(false);
       });
     }
@@ -49,6 +54,21 @@ export default function RecordDetailPage() {
       console.error("Failed to delete:", error);
       alert("削除に失敗しました");
       setDeleting(false);
+    }
+  };
+
+  const handleAnalyzeColor = async () => {
+    if (!record?.imageUrl || !record.id) return;
+    setAnalyzing(true);
+    try {
+      const result = await analyzeImageColor(record.imageUrl);
+      setColorAnalysis(result);
+      await updateRecordColorAnalysis(record.id, result);
+    } catch (error) {
+      console.error("Color analysis failed:", error);
+      alert("色解析に失敗しました");
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -173,6 +193,29 @@ export default function RecordDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Color Analysis Section */}
+        {colorAnalysis ? (
+          <ColorAnalysisDisplay analysis={colorAnalysis} />
+        ) : record.imageUrl ? (
+          <button
+            onClick={handleAnalyzeColor}
+            disabled={analyzing}
+            className="w-full flex items-center justify-center gap-2 bg-white border border-green-300 text-green-700 py-3 rounded-lg font-medium hover:bg-green-50 disabled:opacity-50 transition-colors"
+          >
+            {analyzing ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" />
+                解析中...
+              </>
+            ) : (
+              <>
+                <Palette className="w-5 h-5" />
+                色を解析する
+              </>
+            )}
+          </button>
+        ) : null}
       </div>
     </div>
   );

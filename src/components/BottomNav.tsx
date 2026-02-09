@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarDays, PlusCircle, Clock, Settings } from "lucide-react";
+import { CalendarDays, PlusCircle, Clock, BarChart3, Settings } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "カレンダー", icon: CalendarDays },
-  { href: "/timeline", label: "タイムライン", icon: Clock },
+  { href: "/dashboard", label: "ホーム", icon: CalendarDays },
+  { href: "/timeline", label: "時系列", icon: Clock },
   { href: "/new", label: "記録", icon: PlusCircle },
+  { href: "/analysis", label: "分析", icon: BarChart3 },
   { href: "/settings", label: "設定", icon: Settings },
 ];
 

@@ -116,3 +116,41 @@ export async function updateRecord(
   const db = getFirebaseDb();
   await updateDoc(doc(db, RECORDS_COLLECTION, docId), data);
 }
+
+export async function updateRecordColorAnalysis(
+  docId: string,
+  colorAnalysis: { r: number; g: number; b: number; greenRatio: number }
+): Promise<void> {
+  const db = getFirebaseDb();
+  await updateDoc(doc(db, RECORDS_COLLECTION, docId), { colorAnalysis });
+}
+
+export async function getUserRecordsByCrop(
+  userId: string,
+  crop: string
+): Promise<GrowthRecord[]> {
+  const db = getFirebaseDb();
+  const q = query(
+    collection(db, RECORDS_COLLECTION),
+    where("userId", "==", userId),
+    where("crop", "==", crop),
+    orderBy("createdAt", "asc")
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as GrowthRecord));
+}
+
+export async function getUserRecordsByPlot(
+  userId: string,
+  plotId: string
+): Promise<GrowthRecord[]> {
+  const db = getFirebaseDb();
+  const q = query(
+    collection(db, RECORDS_COLLECTION),
+    where("userId", "==", userId),
+    where("plotId", "==", plotId),
+    orderBy("createdAt", "asc")
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as GrowthRecord));
+}
