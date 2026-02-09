@@ -1,0 +1,179 @@
+"use client";
+
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getRecord, deleteRecord } from "@/lib/records";
+import { GrowthRecord } from "@/types/record";
+import { FertilizerDetail } from "@/types/record";
+import { ArrowLeft, Trash2, Calendar, MapPin, Leaf } from "lucide-react";
+import { format } from "date-fns";
+import { ja } from "date-fns/locale";
+
+const actionTypeLabels: Record<string, string> = {
+  fertilizer: "施肥",
+  pruning: "剪定",
+  watering: "灌水",
+  other: "その他",
+};
+
+export default function RecordDetailPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const params = useParams();
+  const [record, setRecord] = useState<GrowthRecord | null>(null);
+  const [loadingRecord, setLoadingRecord] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !user) router.replace("/");
+  }, [user, loading, router]);
+
+  useEffect(() => {
+    const id = params.id as string;
+    if (id) {
+      getRecord(id).then((r) => {
+        setRecord(r);
+        setLoadingRecord(false);
+      });
+    }
+  }, [params.id]);
+
+  const handleDelete = async () => {
+    if (!record?.id || !confirm("この記録を削除しますか？")) return;
+    setDeleting(true);
+    try {
+      await deleteRecord(record.id);
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Failed to delete:", error);
+      alert("削除に失敗しました");
+      setDeleting(false);
+    }
+  };
+
+  if (loading || !user) return null;
+
+  if (loadingRecord) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+      </div>
+    );
+  }
+
+  if (!record) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <p className="text-gray-500 mb-4">記録が見つかりません</p>
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm"
+        >
+          ダッシュボードに戻る
+        </button>
+      </div>
+    );
+  }
+
+  const date = record.createdAt?.toDate?.() ?? new Date();
+
+  return (
+    <div className="pb-8">
+      <header className="bg-green-600 text-white px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button onClick={() => router.back()} className="p-1">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-lg font-bold">記録詳細</h1>
+        </div>
+        <button
+          onClick={handleDelete}
+          disabled={deleting}
+          className="p-1 hover:bg-green-700 rounded"
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
+      </header>
+
+      {record.imageUrl && (
+        <img
+          src={record.imageUrl}
+          alt={record.crop}
+          className="w-full max-h-80 object-cover"
+        />
+      )}
+
+      <div className="p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <Leaf className="w-5 h-5 text-green-600" />
+          <h2 className="text-xl font-bold text-gray-900">
+            {record.crop}
+            {record.variety && (
+              <span className="text-base font-normal text-gray-500 ml-2">
+                {record.variety}
+              </span>
+            )}
+          </h2>
+        </div>
+
+        <div className="flex items-center gap-4 text-sm text-gray-500">
+          <div className="flex items-center gap-1">
+            <Calendar className="w-4 h-4" />
+            {format(date, "yyyy年M月d日(E) HH:mm", { locale: ja })}
+          </div>
+          {record.plotId && (
+            <div className="flex items-center gap-1">
+              <MapPin className="w-4 h-4" />
+              {record.plotId}
+            </div>
+          )}
+        </div>
+
+        {record.memo && (
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">メモ</h3>
+            <p className="text-gray-700 whitespace-pre-wrap">{record.memo}</p>
+          </div>
+        )}
+
+        {record.actions.length > 0 && (
+          <div className="bg-white rounded-lg p-4 border border-gray-200">
+            <h3 className="text-sm font-medium text-gray-500 mb-3">栽培作業</h3>
+            <div className="space-y-3">
+              {record.actions.map((action, i) => (
+                <div key={i} className="bg-green-50 rounded-md p-3">
+                  <span className="text-sm font-medium text-green-700">
+                    {actionTypeLabels[action.type]}
+                  </span>
+                  {action.type === "fertilizer" && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {(action.detail as FertilizerDetail).name}
+                      {(action.detail as FertilizerDetail).amount &&
+                        ` - ${(action.detail as FertilizerDetail).amount}${(action.detail as FertilizerDetail).unit}`}
+                    </p>
+                  )}
+                  {action.type === "pruning" && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {(action.detail as { method: string }).method}
+                    </p>
+                  )}
+                  {action.type === "watering" && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {(action.detail as { amount: string }).amount}
+                    </p>
+                  )}
+                  {action.type === "other" && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {(action.detail as { description: string }).description}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
