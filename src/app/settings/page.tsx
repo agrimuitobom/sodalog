@@ -4,7 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import BottomNav from "@/components/BottomNav";
-import { Settings, LogOut, User } from "lucide-react";
+import Link from "next/link";
+import { Settings, LogOut, User, Download, ChevronRight } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, loading, logout } = useAuth();
@@ -50,10 +51,18 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200">
+        <div className="bg-white rounded-lg border border-gray-200 divide-y divide-gray-100">
+          <Link
+            href="/export"
+            className="w-full flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <Download className="w-5 h-5 text-green-600" />
+            <span className="font-medium flex-1">データエクスポート</span>
+            <ChevronRight className="w-4 h-4 text-gray-400" />
+          </Link>
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors rounded-lg"
+            className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors"
           >
             <LogOut className="w-5 h-5" />
             <span className="font-medium">ログアウト</span>
