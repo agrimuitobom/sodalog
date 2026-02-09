@@ -8,6 +8,8 @@ import { GrowthRecord } from "@/types/record";
 import { FertilizerDetail } from "@/types/record";
 import { analyzeImageColor, ColorAnalysisResult } from "@/lib/colorAnalysis";
 import ColorAnalysisDisplay from "@/components/ColorAnalysisDisplay";
+import ShareButton from "@/components/ShareButton";
+import CommentSection from "@/components/CommentSection";
 import { ArrowLeft, Trash2, Calendar, MapPin, Leaf, Palette, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -216,6 +218,14 @@ export default function RecordDetailPage() {
             )}
           </button>
         ) : null}
+
+        {/* Share */}
+        {record.id && user && (
+          <ShareButton recordDocId={record.id} userId={user.uid} />
+        )}
+
+        {/* Comments */}
+        {record.id && <CommentSection recordDocId={record.id} />}
       </div>
     </div>
   );

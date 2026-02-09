@@ -47,6 +47,27 @@ export interface GrowthRecord {
   aiDiagnosis?: { result: string; confidence: number };
 }
 
+export type ShareVisibility = "public" | "link_only";
+
+export interface Share {
+  id?: string;
+  recordDocId: string;
+  userId: string;
+  shareId: string;
+  visibility: ShareVisibility;
+  createdAt: Timestamp;
+}
+
+export interface Comment {
+  id?: string;
+  recordDocId: string;
+  userId: string;
+  userName: string;
+  userPhoto: string;
+  text: string;
+  createdAt: Timestamp;
+}
+
 export interface GrowthRecordInput {
   crop: string;
   variety: string;
