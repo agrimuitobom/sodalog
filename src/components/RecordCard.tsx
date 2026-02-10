@@ -5,6 +5,7 @@ import { GrowthRecord } from "@/types/record";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { Camera, Leaf } from "lucide-react";
+import RecordWeatherBadge from "@/components/RecordWeatherBadge";
 
 interface RecordCardProps {
   record: GrowthRecord;
@@ -49,18 +50,19 @@ export default function RecordCard({ record }: RecordCardProps) {
             {record.memo && (
               <p className="text-sm text-gray-600 line-clamp-1">{record.memo}</p>
             )}
-            {record.actions.length > 0 && (
-              <div className="flex gap-1 mt-1">
-                {record.actions.map((action, i) => (
-                  <span
-                    key={i}
-                    className="inline-block px-1.5 py-0.5 bg-green-50 text-green-700 text-xs rounded"
-                  >
-                    {actionTypeLabels[action.type] || action.type}
-                  </span>
-                ))}
-              </div>
-            )}
+            <div className="flex flex-wrap gap-1 mt-1">
+              {record.actions.map((action, i) => (
+                <span
+                  key={i}
+                  className="inline-block px-1.5 py-0.5 bg-green-50 text-green-700 text-xs rounded"
+                >
+                  {actionTypeLabels[action.type] || action.type}
+                </span>
+              ))}
+              {record.weather && (
+                <RecordWeatherBadge weather={record.weather} />
+              )}
+            </div>
           </div>
         </div>
       </div>

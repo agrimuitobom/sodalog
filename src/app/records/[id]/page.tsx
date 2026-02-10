@@ -10,7 +10,9 @@ import { analyzeImageColor, ColorAnalysisResult } from "@/lib/colorAnalysis";
 import ColorAnalysisDisplay from "@/components/ColorAnalysisDisplay";
 import ShareButton from "@/components/ShareButton";
 import CommentSection from "@/components/CommentSection";
-import { ArrowLeft, Trash2, Calendar, MapPin, Leaf, Palette, Loader2 } from "lucide-react";
+import RecordWeatherBadge from "@/components/RecordWeatherBadge";
+import { getWeatherLabel, getWeatherEmoji } from "@/lib/weather";
+import { ArrowLeft, Trash2, Calendar, MapPin, Leaf, Palette, Loader2, CloudSun, Droplets, Wind, Thermometer } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -192,6 +194,40 @@ export default function RecordDetailPage() {
                   )}
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Weather at recording time */}
+        {record.weather && (
+          <div className="bg-gradient-to-r from-blue-50 to-sky-50 rounded-lg p-4 border border-blue-100">
+            <h3 className="text-sm font-medium text-gray-500 mb-3 flex items-center gap-1">
+              <CloudSun className="w-4 h-4" />
+              記録時の天気
+            </h3>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xl">{getWeatherEmoji(record.weather.weatherCode)}</span>
+              <span className="font-medium text-gray-700">
+                {getWeatherLabel(record.weather.weatherCode)}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="flex items-center gap-1.5">
+                <Thermometer className="w-3.5 h-3.5 text-orange-500" />
+                <span className="text-gray-600">{record.weather.temperature}°C</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Droplets className="w-3.5 h-3.5 text-blue-500" />
+                <span className="text-gray-600">{record.weather.humidity}%</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <CloudSun className="w-3.5 h-3.5 text-gray-400" />
+                <span className="text-gray-600">{record.weather.precipitation}mm</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Wind className="w-3.5 h-3.5 text-teal-500" />
+                <span className="text-gray-600">{record.weather.windSpeed}m/s</span>
+              </div>
             </div>
           </div>
         )}

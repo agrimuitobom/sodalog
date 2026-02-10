@@ -78,6 +78,7 @@ export async function createRecord(
     imageThumbnail,
     memo: input.memo,
     actions: input.actions,
+    ...(input.weather ? { weather: input.weather } : {}),
   };
 
   const db = getFirebaseDb();

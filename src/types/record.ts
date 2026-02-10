@@ -45,6 +45,17 @@ export interface GrowthRecord {
   // Phase 2
   colorAnalysis?: { r: number; g: number; b: number; greenRatio: number };
   aiDiagnosis?: { result: string; confidence: number };
+
+  // Phase 3 - Weather at time of recording
+  weather?: {
+    temperature: number;
+    humidity: number;
+    precipitation: number;
+    windSpeed: number;
+    weatherCode: number;
+    latitude: number;
+    longitude: number;
+  };
 }
 
 export type ShareVisibility = "public" | "link_only";
@@ -75,4 +86,5 @@ export interface GrowthRecordInput {
   memo: string;
   actions: CultivationAction[];
   imageFile?: File | null;
+  weather?: GrowthRecord["weather"];
 }

@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createRecord } from "@/lib/records";
 import { CultivationAction } from "@/types/record";
+import { getCurrentWeather, WeatherCurrent, getWeatherLabel, getWeatherEmoji } from "@/lib/weather";
 import BottomNav from "@/components/BottomNav";
 import CameraCapture from "@/components/CameraCapture";
 import ActionInput from "@/components/ActionInput";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, CloudSun } from "lucide-react";
 
 export default function NewRecordPage() {
   const { user, loading } = useAuth();
@@ -22,9 +23,39 @@ export default function NewRecordPage() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
+  // Weather auto-capture
+  const [weather, setWeather] = useState<WeatherCurrent | null>(null);
+  const [weatherCoords, setWeatherCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState(true);
+
   useEffect(() => {
     if (!loading && !user) router.replace("/");
   }, [user, loading, router]);
+
+  // Auto-fetch weather on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          setWeatherCoords({ lat, lon });
+          try {
+            const w = await getCurrentWeather(lat, lon);
+            setWeather(w);
+          } catch (err) {
+            console.error("Weather fetch failed:", err);
+          } finally {
+            setWeatherLoading(false);
+          }
+        },
+        () => setWeatherLoading(false),
+        { timeout: 5000 }
+      );
+    } else {
+      setWeatherLoading(false);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +63,19 @@ export default function NewRecordPage() {
 
     setSaving(true);
     try {
+      const weatherData =
+        weather && weatherCoords
+          ? {
+              temperature: weather.temperature,
+              humidity: weather.humidity,
+              precipitation: weather.precipitation,
+              windSpeed: weather.windSpeed,
+              weatherCode: weather.weatherCode,
+              latitude: weatherCoords.lat,
+              longitude: weatherCoords.lon,
+            }
+          : undefined;
+
       await createRecord(user.uid, {
         crop,
         variety,
@@ -39,6 +83,7 @@ export default function NewRecordPage() {
         memo,
         actions,
         imageFile,
+        weather: weatherData,
       });
       router.push("/dashboard");
     } catch (error) {
@@ -61,6 +106,29 @@ export default function NewRecordPage() {
       </header>
 
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        {/* Auto-captured weather */}
+        <div className="bg-gradient-to-r from-blue-50 to-sky-50 rounded-lg p-3 border border-blue-100">
+          <div className="flex items-center gap-2 mb-1">
+            <CloudSun className="w-4 h-4 text-blue-500" />
+            <span className="text-xs font-medium text-blue-700">現在の天気（自動取得）</span>
+          </div>
+          {weatherLoading ? (
+            <div className="flex items-center gap-2 text-xs text-blue-400">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              取得中...
+            </div>
+          ) : weather ? (
+            <div className="flex items-center gap-3 text-sm">
+              <span>{getWeatherEmoji(weather.weatherCode)}</span>
+              <span className="text-gray-700 font-medium">{weather.temperature}°C</span>
+              <span className="text-blue-500">{weather.humidity}%</span>
+              <span className="text-gray-400 text-xs">{getWeatherLabel(weather.weatherCode)}</span>
+            </div>
+          ) : (
+            <p className="text-xs text-gray-400">位置情報が取得できませんでした</p>
+          )}
+        </div>
+
         <CameraCapture
           onCapture={setImageFile}
           onClear={() => setImageFile(null)}

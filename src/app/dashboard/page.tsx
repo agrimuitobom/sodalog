@@ -8,7 +8,7 @@ import { GrowthRecord } from "@/types/record";
 import BottomNav from "@/components/BottomNav";
 import RecordCard from "@/components/RecordCard";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin, CloudSun } from "lucide-react";
 import {
   format,
   startOfMonth,
@@ -145,6 +145,13 @@ export default function DashboardPage() {
           >
             <MapPin className="w-4 h-4 text-green-600" />
             圃場
+          </Link>
+          <Link
+            href="/weather"
+            className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            <CloudSun className="w-4 h-4 text-blue-500" />
+            天気
           </Link>
         </div>
 
