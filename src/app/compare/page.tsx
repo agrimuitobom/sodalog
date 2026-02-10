@@ -149,7 +149,7 @@ export default function ComparePage() {
                 <div
                   key={record.id}
                   className="bg-white rounded-lg border border-gray-200 overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => router.push(`/records/${record.id}`)}
+                  onClick={() => router.push(`/records/detail?id=${record.id}`)}
                 >
                   {record.imageThumbnail || record.imageUrl ? (
                     <img

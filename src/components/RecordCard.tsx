@@ -22,7 +22,7 @@ export default function RecordCard({ record }: RecordCardProps) {
   const date = record.createdAt?.toDate?.() ?? new Date();
 
   return (
-    <Link href={`/records/${record.id}`} className="block">
+    <Link href={`/records/detail?id=${record.id}`} className="block">
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
         <div className="flex">
           {record.imageThumbnail || record.imageUrl ? (

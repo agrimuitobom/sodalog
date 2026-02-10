@@ -115,7 +115,7 @@ export default function PlotsPage() {
                 return (
                   <div
                     key={record.id}
-                    onClick={() => router.push(`/records/${record.id}`)}
+                    onClick={() => router.push(`/records/detail?id=${record.id}`)}
                     className="bg-white rounded-lg border border-gray-200 p-3 flex items-center gap-3 cursor-pointer hover:shadow-sm transition-shadow"
                   >
                     {record.imageThumbnail || record.imageUrl ? (

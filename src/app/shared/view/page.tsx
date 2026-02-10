@@ -1,7 +1,7 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
 import { getSharedRecord } from "@/lib/shares";
 import { GrowthRecord, FertilizerDetail } from "@/types/record";
 import ColorAnalysisDisplay from "@/components/ColorAnalysisDisplay";
@@ -17,15 +17,19 @@ const actionTypeLabels: Record<string, string> = {
   other: "その他",
 };
 
-export default function SharedRecordClient() {
-  const params = useParams();
+function SharedRecordContent() {
+  const searchParams = useSearchParams();
+  const shareId = searchParams.get("id");
   const [record, setRecord] = useState<GrowthRecord | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    const shareId = params.shareId as string;
-    if (!shareId) return;
+    if (!shareId) {
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
 
     getSharedRecord(shareId)
       .then((result) => {
@@ -37,7 +41,7 @@ export default function SharedRecordClient() {
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-  }, [params.shareId]);
+  }, [shareId]);
 
   if (loading) {
     return (
@@ -63,7 +67,6 @@ export default function SharedRecordClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <header className="bg-green-600 text-white px-4 py-3 flex items-center gap-2">
         <Sprout className="w-6 h-6" />
         <h1 className="text-lg font-bold">そだログ</h1>
@@ -152,7 +155,6 @@ export default function SharedRecordClient() {
           <ColorAnalysisDisplay analysis={record.colorAnalysis} />
         )}
 
-        {/* Comments - read-only for non-logged-in, writable for logged-in */}
         {record.id && <CommentSection recordDocId={record.id} />}
 
         <p className="text-center text-xs text-gray-400 pt-4">
@@ -160,5 +162,17 @@ export default function SharedRecordClient() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function SharedRecordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+      </div>
+    }>
+      <SharedRecordContent />
+    </Suspense>
   );
 }

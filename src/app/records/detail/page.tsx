@@ -1,8 +1,8 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
 import { getRecord, deleteRecord, updateRecordColorAnalysis } from "@/lib/records";
 import { GrowthRecord } from "@/types/record";
 import { FertilizerDetail } from "@/types/record";
@@ -15,6 +15,7 @@ import { getWeatherLabel, getWeatherEmoji } from "@/lib/weather";
 import { ArrowLeft, Trash2, Pencil, Calendar, MapPin, Leaf, Palette, Loader2, CloudSun, Droplets, Wind, Thermometer } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
+import BottomNav from "@/components/BottomNav";
 
 const actionTypeLabels: Record<string, string> = {
   fertilizer: "施肥",
@@ -23,10 +24,12 @@ const actionTypeLabels: Record<string, string> = {
   other: "その他",
 };
 
-export default function RecordDetailClient() {
+function RecordDetailContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const params = useParams();
+  const searchParams = useSearchParams();
+  const recordId = searchParams.get("id");
+
   const [record, setRecord] = useState<GrowthRecord | null>(null);
   const [loadingRecord, setLoadingRecord] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -38,15 +41,22 @@ export default function RecordDetailClient() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    const id = params.id as string;
-    if (id) {
-      getRecord(id).then((r) => {
-        setRecord(r);
-        if (r?.colorAnalysis) setColorAnalysis(r.colorAnalysis);
-        setLoadingRecord(false);
-      });
+    if (recordId) {
+      getRecord(recordId)
+        .then((r) => {
+          setRecord(r);
+          if (r?.colorAnalysis) setColorAnalysis(r.colorAnalysis);
+        })
+        .catch((err) => {
+          console.error("Failed to load record:", err);
+        })
+        .finally(() => {
+          setLoadingRecord(false);
+        });
+    } else {
+      setLoadingRecord(false);
     }
-  }, [params.id]);
+  }, [recordId]);
 
   const handleDelete = async () => {
     if (!record?.id || !confirm("この記録を削除しますか？")) return;
@@ -113,7 +123,7 @@ export default function RecordDetailClient() {
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => router.push(`/records/${record.id}/edit`)}
+            onClick={() => router.push(`/records/edit?id=${record.id}`)}
             className="p-1 hover:bg-green-700 rounded"
           >
             <Pencil className="w-5 h-5" />
@@ -272,5 +282,17 @@ export default function RecordDetailClient() {
         {record.id && <CommentSection recordDocId={record.id} />}
       </div>
     </div>
+  );
+}
+
+export default function RecordDetailPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+      </div>
+    }>
+      <RecordDetailContent />
+    </Suspense>
   );
 }

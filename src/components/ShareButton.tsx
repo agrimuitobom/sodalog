@@ -47,7 +47,7 @@ export default function ShareButton({ recordDocId, userId }: ShareButtonProps) {
   };
 
   const shareUrl = share
-    ? `${window.location.origin}/shared/${share.shareId}`
+    ? `${window.location.origin}/shared/view?id=${share.shareId}`
     : "";
 
   const handleCopy = async () => {

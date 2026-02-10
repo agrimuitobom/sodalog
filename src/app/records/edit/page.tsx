@@ -1,8 +1,8 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useRouter, useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
 import { getRecord, updateRecord } from "@/lib/records";
 import { GrowthRecord, CultivationAction } from "@/types/record";
 import BottomNav from "@/components/BottomNav";
@@ -10,10 +10,11 @@ import CameraCapture from "@/components/CameraCapture";
 import ActionInput from "@/components/ActionInput";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 
-export default function EditRecordClient() {
+function EditRecordContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const params = useParams();
+  const searchParams = useSearchParams();
+  const recordId = searchParams.get("id");
 
   const [record, setRecord] = useState<GrowthRecord | null>(null);
   const [loadingRecord, setLoadingRecord] = useState(true);
@@ -31,11 +32,9 @@ export default function EditRecordClient() {
     if (!loading && !user) router.replace("/");
   }, [user, loading, router]);
 
-  // Load existing record data
   useEffect(() => {
-    const id = params.id as string;
-    if (id && id !== "_") {
-      getRecord(id)
+    if (recordId) {
+      getRecord(recordId)
         .then((r) => {
           if (r) {
             setRecord(r);
@@ -46,11 +45,17 @@ export default function EditRecordClient() {
             setActions(r.actions || []);
             if (r.imageUrl) setExistingImageUrl(r.imageUrl);
           }
-          setLoadingRecord(false);
         })
-        .catch(() => setLoadingRecord(false));
+        .catch((err) => {
+          console.error("Failed to load record:", err);
+        })
+        .finally(() => {
+          setLoadingRecord(false);
+        });
+    } else {
+      setLoadingRecord(false);
     }
-  }, [params.id]);
+  }, [recordId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +71,7 @@ export default function EditRecordClient() {
         actions,
         imageFile,
       });
-      router.push(`/records/${record.id}`);
+      router.push(`/records/detail?id=${record.id}`);
     } catch (error) {
       console.error("Failed to update record:", error);
       alert("記録の更新に失敗しました");
@@ -109,7 +114,6 @@ export default function EditRecordClient() {
       </header>
 
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
-        {/* Current image or new upload */}
         {existingImageUrl && !imageFile ? (
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">現在の写真</label>
@@ -127,7 +131,6 @@ export default function EditRecordClient() {
         <CameraCapture
           onCapture={setImageFile}
           onClear={() => setImageFile(null)}
-          preview={imageFile ? undefined : undefined}
         />
         {imageFile && (
           <p className="text-xs text-green-600">新しい写真が選択されています</p>
@@ -203,5 +206,17 @@ export default function EditRecordClient() {
 
       <BottomNav />
     </div>
+  );
+}
+
+export default function EditRecordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+      </div>
+    }>
+      <EditRecordContent />
+    </Suspense>
   );
 }
