@@ -42,6 +42,7 @@ export default function WeatherPage() {
   const [lon, setLon] = useState(DEFAULT_LON);
   const [locationName, setLocationName] = useState("位置を取得中...");
   const [geoLoading, setGeoLoading] = useState(true);
+  const [geoError, setGeoError] = useState(false);
 
   const [current, setCurrent] = useState<WeatherCurrent | null>(null);
   const [forecast, setForecast] = useState<WeatherDaily[]>([]);
@@ -57,7 +58,9 @@ export default function WeatherPage() {
   }, [user, loading, router]);
 
   // Get user location
-  useEffect(() => {
+  const requestLocation = () => {
+    setGeoLoading(true);
+    setGeoError(false);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -66,18 +69,25 @@ export default function WeatherPage() {
           setLocationName(
             `${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)}`
           );
+          setGeoError(false);
           setGeoLoading(false);
         },
         () => {
           setLocationName("東京（デフォルト）");
+          setGeoError(true);
           setGeoLoading(false);
         },
-        { timeout: 5000 }
+        { timeout: 10000 }
       );
     } else {
       setLocationName("東京（デフォルト）");
+      setGeoError(true);
       setGeoLoading(false);
     }
+  };
+
+  useEffect(() => {
+    requestLocation();
   }, []);
 
   // Fetch current + forecast when location is ready
@@ -154,7 +164,20 @@ export default function WeatherPage() {
           <MapPin className="w-4 h-4" />
           <span>{locationName}</span>
           {geoLoading && <Loader2 className="w-3 h-3 animate-spin" />}
+          {geoError && (
+            <button
+              onClick={requestLocation}
+              className="text-xs text-blue-600 underline ml-1"
+            >
+              位置情報を再取得
+            </button>
+          )}
         </div>
+        {geoError && (
+          <p className="text-xs text-gray-400">
+            位置情報の許可をブラウザに求められた場合は「許可」を選択してください
+          </p>
+        )}
 
         {/* Current Weather */}
         <div>

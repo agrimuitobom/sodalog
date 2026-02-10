@@ -37,10 +37,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (user) {
-      getUserRecords(user.uid).then((recs) => {
-        setRecords(recs);
-        setLoadingRecords(false);
-      });
+      getUserRecords(user.uid)
+        .then((recs) => {
+          setRecords(recs);
+        })
+        .catch((err) => {
+          console.error("Failed to load records:", err);
+        })
+        .finally(() => {
+          setLoadingRecords(false);
+        });
     }
   }, [user]);
 
