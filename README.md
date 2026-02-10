@@ -1,36 +1,116 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# そだログ (Sodalog)
 
-## Getting Started
+農業高校生のための栽培記録アプリ。カメラで撮影した作物の成長をFirestoreに記録し、カレンダー・タイムライン・グラフで振り返ることができます。
 
-First, run the development server:
+## 技術スタック
+
+- **フロントエンド**: Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
+- **バックエンド**: Firebase (Authentication, Firestore, Storage)
+- **気象データ**: Open-Meteo API（無料、APIキー不要）
+- **ホスティング**: Firebase Hosting（静的エクスポート）
+
+## セットアップ
+
+### 1. 依存関係のインストール
+
+```bash
+npm install
+```
+
+### 2. Firebase プロジェクトの設定
+
+1. [Firebase Console](https://console.firebase.google.com/) でプロジェクトを作成
+2. Authentication で Google ログインを有効化
+3. Firestore Database を作成
+4. Storage を有効化
+5. ウェブアプリを追加して設定情報を取得
+
+### 3. 環境変数の設定
+
+`.env.local` を作成し、Firebase の設定情報を記入：
+
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+```
+
+### 4. `.firebaserc` の更新
+
+`.firebaserc` 内のプロジェクトIDを自分のFirebaseプロジェクトIDに変更：
+
+```json
+{
+  "projects": {
+    "default": "your-project-id"
+  }
+}
+```
+
+### 5. 開発サーバーの起動
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+[http://localhost:3000](http://localhost:3000) をブラウザで開きます。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## デプロイ
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Firebase Hosting へのデプロイ
 
-## Learn More
+```bash
+# 全体デプロイ（ビルド + Hosting + Firestore Rules + Storage Rules）
+npm run deploy
 
-To learn more about Next.js, take a look at the following resources:
+# Hosting のみ
+npm run deploy:hosting
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Firestore / Storage ルールのみ
+npm run deploy:rules
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Firestore インデックスのみ
+npm run deploy:indexes
+```
 
-## Deploy on Vercel
+### 初回デプロイ時
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Firebase CLI でログインが必要です：
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx firebase login
+```
+
+## 機能一覧
+
+### Phase 1（MVP）
+- Google アカウントログイン
+- カメラ撮影 + 画像圧縮
+- 栽培記録の作成・編集・削除
+- カレンダー表示 / タイムライン表示
+- 記録詳細表示
+
+### Phase 2
+- 色解析（RGB値・緑色面積比）
+- 比較表示（タイムラインモード・個別モード）
+- 圃場・グループ管理
+- 成長グラフ（Recharts）
+
+### Phase 3
+- データエクスポート（CSV / PDF）
+- 共有リンク + コメント機能
+- 気象データ連携（Open-Meteo API）
+
+## プロジェクト構成
+
+```
+src/
+├── app/           # Next.js App Router ページ
+├── components/    # 共通コンポーネント
+├── contexts/      # React Context (Auth)
+├── lib/           # Firebase操作、API、ユーティリティ
+└── types/         # TypeScript型定義
+```
