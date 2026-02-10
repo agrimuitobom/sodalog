@@ -7,6 +7,9 @@ import {
   getCurrentWeather,
   getWeatherForecast,
   getHistoricalWeather,
+  reverseGeocode,
+  getWeatherEmoji,
+  getWeatherLabel,
   WeatherCurrent,
   WeatherDaily,
 } from "@/lib/weather";
@@ -80,12 +83,14 @@ export default function WeatherPage() {
     setGeoError(false);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setLat(pos.coords.latitude);
-          setLon(pos.coords.longitude);
-          setLocationName(
-            `${pos.coords.latitude.toFixed(2)}, ${pos.coords.longitude.toFixed(2)}`
-          );
+        async (pos) => {
+          const newLat = pos.coords.latitude;
+          const newLon = pos.coords.longitude;
+          setLat(newLat);
+          setLon(newLon);
+          // Reverse geocode to get city name
+          const name = await reverseGeocode(newLat, newLon);
+          setLocationName(name);
           setGeoError(false);
           setGeoLoading(false);
         },
@@ -246,11 +251,19 @@ export default function WeatherPage() {
                 {forecast.map((day) => (
                   <div
                     key={day.date}
-                    className="flex-1 min-w-[70px] text-center py-3 px-2 border-r border-gray-100 last:border-r-0"
+                    className="flex-1 min-w-[80px] text-center py-3 px-2 border-r border-gray-100 last:border-r-0"
                   >
                     <p className="text-xs text-gray-500">
                       {format(new Date(day.date), "M/d(E)", { locale: ja })}
                     </p>
+                    {day.weatherCode != null && (
+                      <div className="mt-1">
+                        <span className="text-lg">{getWeatherEmoji(day.weatherCode)}</span>
+                        <p className="text-[10px] text-gray-400 leading-tight">
+                          {getWeatherLabel(day.weatherCode)}
+                        </p>
+                      </div>
+                    )}
                     <p className="text-sm font-bold text-red-500 mt-1">{day.tempMax}°</p>
                     <p className="text-sm text-blue-500">{day.tempMin}°</p>
                     {day.precipitationSum > 0 && (

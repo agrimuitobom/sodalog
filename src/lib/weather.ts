@@ -14,6 +14,7 @@ export interface WeatherDaily {
   precipitationSum: number;
   humidityMean: number;
   windSpeedMax: number;
+  weatherCode?: number;
 }
 
 export interface WeatherData {
@@ -67,6 +68,28 @@ export function getWeatherEmoji(code: number): string {
 const FORECAST_API = "https://api.open-meteo.com/v1/forecast";
 const ARCHIVE_API = "https://archive-api.open-meteo.com/v1/archive";
 
+// Reverse geocoding using Nominatim (OpenStreetMap, free, no API key)
+export async function reverseGeocode(lat: number, lon: number): Promise<string> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=ja&zoom=10`,
+      { headers: { "User-Agent": "Sodalog/1.0" } }
+    );
+    if (!res.ok) return `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+    const data = await res.json();
+    const addr = data.address;
+    // Return city/town/village + prefecture
+    const city = addr.city || addr.town || addr.village || addr.county || "";
+    const prefecture = addr.province || addr.state || "";
+    if (city && prefecture) return `${prefecture} ${city}`;
+    if (city) return city;
+    if (prefecture) return prefecture;
+    return data.display_name?.split(",")[0] || `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+  } catch {
+    return `${lat.toFixed(2)}, ${lon.toFixed(2)}`;
+  }
+}
+
 export async function getCurrentWeather(
   lat: number,
   lon: number
@@ -100,7 +123,7 @@ export async function getWeatherForecast(
   const params = new URLSearchParams({
     latitude: lat.toString(),
     longitude: lon.toString(),
-    daily: "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
+    daily: "temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,weather_code",
     timezone: "Asia/Tokyo",
     forecast_days: days.toString(),
   });
@@ -116,6 +139,7 @@ export async function getWeatherForecast(
     precipitationSum: data.daily.precipitation_sum[i],
     humidityMean: 0,
     windSpeedMax: data.daily.wind_speed_10m_max[i],
+    weatherCode: data.daily.weather_code?.[i],
   }));
 }
 
