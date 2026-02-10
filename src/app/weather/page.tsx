@@ -30,6 +30,22 @@ import {
 
 type HistoryRange = "7d" | "30d" | "90d";
 
+type LocationOption = { name: string; lat: number; lon: number };
+
+const LOCATIONS: LocationOption[] = [
+  { name: "現在地", lat: 0, lon: 0 },
+  { name: "札幌", lat: 43.0621, lon: 141.3544 },
+  { name: "仙台", lat: 38.2682, lon: 140.8694 },
+  { name: "東京", lat: 35.6895, lon: 139.6917 },
+  { name: "名古屋", lat: 35.1815, lon: 136.9066 },
+  { name: "大阪", lat: 34.6937, lon: 135.5023 },
+  { name: "広島", lat: 34.3853, lon: 132.4553 },
+  { name: "高松", lat: 34.3401, lon: 134.0434 },
+  { name: "福岡", lat: 33.5904, lon: 130.4017 },
+  { name: "鹿児島", lat: 31.5602, lon: 130.5581 },
+  { name: "那覇", lat: 26.2124, lon: 127.6809 },
+];
+
 // Default: Tokyo
 const DEFAULT_LAT = 35.6895;
 const DEFAULT_LON = 139.6917;
@@ -43,6 +59,7 @@ export default function WeatherPage() {
   const [locationName, setLocationName] = useState("位置を取得中...");
   const [geoLoading, setGeoLoading] = useState(true);
   const [geoError, setGeoError] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState("現在地");
 
   const [current, setCurrent] = useState<WeatherCurrent | null>(null);
   const [forecast, setForecast] = useState<WeatherDaily[]>([]);
@@ -83,6 +100,22 @@ export default function WeatherPage() {
       setLocationName("東京（デフォルト）");
       setGeoError(true);
       setGeoLoading(false);
+    }
+  };
+
+  const selectLocation = (name: string) => {
+    setSelectedLocation(name);
+    if (name === "現在地") {
+      requestLocation();
+    } else {
+      const loc = LOCATIONS.find((l) => l.name === name);
+      if (loc) {
+        setLat(loc.lat);
+        setLon(loc.lon);
+        setLocationName(loc.name);
+        setGeoError(false);
+        setGeoLoading(false);
+      }
     }
   };
 
@@ -161,21 +194,28 @@ export default function WeatherPage() {
       <div className="p-4 space-y-5">
         {/* Location */}
         <div className="flex items-center gap-2 text-sm text-gray-600">
-          <MapPin className="w-4 h-4" />
-          <span>{locationName}</span>
-          {geoLoading && <Loader2 className="w-3 h-3 animate-spin" />}
-          {geoError && (
-            <button
-              onClick={requestLocation}
-              className="text-xs text-blue-600 underline ml-1"
-            >
-              位置情報を再取得
-            </button>
+          <MapPin className="w-4 h-4 flex-shrink-0" />
+          <select
+            value={selectedLocation}
+            onChange={(e) => selectLocation(e.target.value)}
+            className="bg-white border border-gray-200 rounded-md px-2 py-1 text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          >
+            {LOCATIONS.map((loc) => (
+              <option key={loc.name} value={loc.name}>
+                {loc.name}
+              </option>
+            ))}
+          </select>
+          {selectedLocation === "現在地" && (
+            <span className="text-xs text-gray-400">
+              {geoLoading ? "" : locationName !== "位置を取得中..." ? `(${locationName})` : ""}
+            </span>
           )}
+          {geoLoading && <Loader2 className="w-3 h-3 animate-spin" />}
         </div>
-        {geoError && (
+        {geoError && selectedLocation === "現在地" && (
           <p className="text-xs text-gray-400">
-            位置情報の許可をブラウザに求められた場合は「許可」を選択してください
+            現在地を取得できませんでした。都市を選択するか、ブラウザの位置情報を許可してください
           </p>
         )}
 
