@@ -8,7 +8,7 @@ import { GrowthRecord, CultivationAction } from "@/types/record";
 import BottomNav from "@/components/BottomNav";
 import CameraCapture from "@/components/CameraCapture";
 import ActionInput from "@/components/ActionInput";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Calendar } from "lucide-react";
 
 function EditRecordContent() {
   const { user, loading } = useAuth();
@@ -19,6 +19,12 @@ function EditRecordContent() {
   const [record, setRecord] = useState<GrowthRecord | null>(null);
   const [loadingRecord, setLoadingRecord] = useState(true);
 
+  const formatForInput = (d: Date) => {
+    const pad = (n: number) => n.toString().padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+
+  const [recordDate, setRecordDate] = useState("");
   const [crop, setCrop] = useState("");
   const [variety, setVariety] = useState("");
   const [plotId, setPlotId] = useState("");
@@ -38,6 +44,8 @@ function EditRecordContent() {
         .then((r) => {
           if (r) {
             setRecord(r);
+            const date = r.createdAt?.toDate?.() ?? new Date();
+            setRecordDate(formatForInput(date));
             setCrop(r.crop);
             setVariety(r.variety || "");
             setPlotId(r.plotId || "");
@@ -64,6 +72,7 @@ function EditRecordContent() {
     setSaving(true);
     try {
       await updateRecord(record.id, user.uid, {
+        createdAt: new Date(recordDate),
         crop,
         variety,
         plotId,
@@ -114,6 +123,22 @@ function EditRecordContent() {
       </header>
 
       <form onSubmit={handleSubmit} className="p-4 space-y-4">
+        {/* Record date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            <span className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              記録日時
+            </span>
+          </label>
+          <input
+            type="datetime-local"
+            value={recordDate}
+            onChange={(e) => setRecordDate(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+          />
+        </div>
+
         {existingImageUrl && !imageFile ? (
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">現在の写真</label>

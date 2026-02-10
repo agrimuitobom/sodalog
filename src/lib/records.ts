@@ -70,7 +70,7 @@ export async function createRecord(
   const record: Omit<GrowthRecord, "id"> = {
     userId,
     recordId,
-    createdAt: Timestamp.now(),
+    createdAt: input.createdAt ? Timestamp.fromDate(input.createdAt) : Timestamp.now(),
     crop: input.crop,
     variety: input.variety,
     plotId: input.plotId,
@@ -118,6 +118,7 @@ export async function updateRecord(
   const db = getFirebaseDb();
   const updateData: Record<string, unknown> = {};
 
+  if (data.createdAt !== undefined) updateData.createdAt = Timestamp.fromDate(data.createdAt);
   if (data.crop !== undefined) updateData.crop = data.crop;
   if (data.variety !== undefined) updateData.variety = data.variety;
   if (data.plotId !== undefined) updateData.plotId = data.plotId;

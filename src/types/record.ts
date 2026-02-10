@@ -87,4 +87,5 @@ export interface GrowthRecordInput {
   actions: CultivationAction[];
   imageFile?: File | null;
   weather?: GrowthRecord["weather"];
+  createdAt?: Date;
 }
