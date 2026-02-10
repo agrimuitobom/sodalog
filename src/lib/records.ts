@@ -112,10 +112,31 @@ export async function deleteRecord(docId: string): Promise<void> {
 
 export async function updateRecord(
   docId: string,
+  userId: string,
   data: Partial<GrowthRecordInput>
 ): Promise<void> {
   const db = getFirebaseDb();
-  await updateDoc(doc(db, RECORDS_COLLECTION, docId), data);
+  const updateData: Record<string, unknown> = {};
+
+  if (data.crop !== undefined) updateData.crop = data.crop;
+  if (data.variety !== undefined) updateData.variety = data.variety;
+  if (data.plotId !== undefined) updateData.plotId = data.plotId;
+  if (data.memo !== undefined) updateData.memo = data.memo;
+  if (data.actions !== undefined) updateData.actions = data.actions;
+
+  // Handle image upload
+  if (data.imageFile) {
+    const { full, thumbnail } = await compressImage(data.imageFile);
+    const recordId = docId;
+    const [fullUrl, thumbUrl] = await Promise.all([
+      uploadImage(userId, recordId, full, "image.jpg"),
+      uploadImage(userId, recordId, thumbnail, "thumbnail.jpg"),
+    ]);
+    updateData.imageUrl = fullUrl;
+    updateData.imageThumbnail = thumbUrl;
+  }
+
+  await updateDoc(doc(db, RECORDS_COLLECTION, docId), updateData);
 }
 
 export async function updateRecordColorAnalysis(

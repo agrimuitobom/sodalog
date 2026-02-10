@@ -12,7 +12,7 @@ import ShareButton from "@/components/ShareButton";
 import CommentSection from "@/components/CommentSection";
 import RecordWeatherBadge from "@/components/RecordWeatherBadge";
 import { getWeatherLabel, getWeatherEmoji } from "@/lib/weather";
-import { ArrowLeft, Trash2, Calendar, MapPin, Leaf, Palette, Loader2, CloudSun, Droplets, Wind, Thermometer } from "lucide-react";
+import { ArrowLeft, Trash2, Pencil, Calendar, MapPin, Leaf, Palette, Loader2, CloudSun, Droplets, Wind, Thermometer } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -111,13 +111,21 @@ export default function RecordDetailClient() {
           </button>
           <h1 className="text-lg font-bold">記録詳細</h1>
         </div>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="p-1 hover:bg-green-700 rounded"
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => router.push(`/records/${record.id}/edit`)}
+            className="p-1 hover:bg-green-700 rounded"
+          >
+            <Pencil className="w-5 h-5" />
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="p-1 hover:bg-green-700 rounded"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
+        </div>
       </header>
 
       {record.imageUrl && (
