@@ -5,11 +5,17 @@ export interface ColorAnalysisResult {
   greenRatio: number;
 }
 
-export function analyzeImageColor(imageUrl: string): Promise<ColorAnalysisResult> {
+export async function analyzeImageColor(imageUrl: string): Promise<ColorAnalysisResult> {
+  // Fetch image as blob to avoid CORS restrictions on canvas getImageData
+  const response = await fetch(imageUrl);
+  if (!response.ok) throw new Error("Failed to fetch image");
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
     img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       if (!ctx) {
@@ -53,7 +59,10 @@ export function analyzeImageColor(imageUrl: string): Promise<ColorAnalysisResult
         greenRatio: Math.round((greenPixels / totalPixels) * 1000) / 10,
       });
     };
-    img.onerror = () => reject(new Error("Failed to load image"));
-    img.src = imageUrl;
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Failed to load image"));
+    };
+    img.src = objectUrl;
   });
 }
