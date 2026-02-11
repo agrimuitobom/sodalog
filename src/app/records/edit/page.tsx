@@ -19,9 +19,9 @@ function EditRecordContent() {
   const [record, setRecord] = useState<GrowthRecord | null>(null);
   const [loadingRecord, setLoadingRecord] = useState(true);
 
-  const formatForInput = (d: Date) => {
+  const formatDateForInput = (d: Date) => {
     const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   };
 
   const [recordDate, setRecordDate] = useState("");
@@ -45,7 +45,7 @@ function EditRecordContent() {
           if (r) {
             setRecord(r);
             const date = r.createdAt?.toDate?.() ?? new Date();
-            setRecordDate(formatForInput(date));
+            setRecordDate(formatDateForInput(date));
             setCrop(r.crop);
             setVariety(r.variety || "");
             setPlotId(r.plotId || "");
@@ -72,7 +72,7 @@ function EditRecordContent() {
     setSaving(true);
     try {
       await updateRecord(record.id, user.uid, {
-        createdAt: new Date(recordDate),
+        createdAt: new Date(recordDate + "T12:00:00"),
         crop,
         variety,
         plotId,
@@ -128,11 +128,11 @@ function EditRecordContent() {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
-              記録日時
+              記録日
             </span>
           </label>
           <input
-            type="datetime-local"
+            type="date"
             value={recordDate}
             onChange={(e) => setRecordDate(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"

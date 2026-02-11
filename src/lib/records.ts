@@ -97,6 +97,20 @@ export async function getUserRecords(userId: string): Promise<GrowthRecord[]> {
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as GrowthRecord));
 }
 
+export async function getUserCropOptions(userId: string): Promise<{ crop: string; variety: string }[]> {
+  const records = await getUserRecords(userId);
+  const seen = new Set<string>();
+  const options: { crop: string; variety: string }[] = [];
+  for (const r of records) {
+    const key = `${r.crop}||${r.variety || ""}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      options.push({ crop: r.crop, variety: r.variety || "" });
+    }
+  }
+  return options;
+}
+
 export async function getRecord(docId: string): Promise<GrowthRecord | null> {
   const db = getFirebaseDb();
   const docRef = doc(db, RECORDS_COLLECTION, docId);

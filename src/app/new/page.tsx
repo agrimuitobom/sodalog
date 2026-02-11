@@ -3,7 +3,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { createRecord } from "@/lib/records";
+import { createRecord, getUserCropOptions } from "@/lib/records";
 import { CultivationAction } from "@/types/record";
 import { getCurrentWeather, WeatherCurrent, getWeatherLabel, getWeatherEmoji } from "@/lib/weather";
 import BottomNav from "@/components/BottomNav";
@@ -15,16 +15,17 @@ export default function NewRecordPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  // Format current datetime for datetime-local input
+  // Format current date for date input
   const now = new Date();
-  const formatForInput = (d: Date) => {
+  const formatDateForInput = (d: Date) => {
     const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   };
 
-  const [recordDate, setRecordDate] = useState(formatForInput(now));
+  const [recordDate, setRecordDate] = useState(formatDateForInput(now));
   const [crop, setCrop] = useState("");
   const [variety, setVariety] = useState("");
+  const [cropOptions, setCropOptions] = useState<{ crop: string; variety: string }[]>([]);
   const [plotId, setPlotId] = useState("");
   const [memo, setMemo] = useState("");
   const [actions, setActions] = useState<CultivationAction[]>([]);
@@ -39,6 +40,13 @@ export default function NewRecordPage() {
   useEffect(() => {
     if (!loading && !user) router.replace("/");
   }, [user, loading, router]);
+
+  // Load past crop/variety options
+  useEffect(() => {
+    if (user) {
+      getUserCropOptions(user.uid).then(setCropOptions).catch(console.error);
+    }
+  }, [user]);
 
   // Auto-fetch weather on mount
   useEffect(() => {
@@ -92,7 +100,7 @@ export default function NewRecordPage() {
         actions,
         imageFile,
         weather: weatherData,
-        createdAt: new Date(recordDate),
+        createdAt: new Date(recordDate + "T12:00:00"),
       });
       router.push("/dashboard");
     } catch (error) {
@@ -143,11 +151,11 @@ export default function NewRecordPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />
-              記録日時
+              記録日
             </span>
           </label>
           <input
-            type="datetime-local"
+            type="date"
             value={recordDate}
             onChange={(e) => setRecordDate(e.target.value)}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -164,25 +172,71 @@ export default function NewRecordPage() {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             作物名 <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            value={crop}
-            onChange={(e) => setCrop(e.target.value)}
-            placeholder="例：トマト、イネ、キュウリ"
-            required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">品種</label>
-          <input
-            type="text"
-            value={variety}
-            onChange={(e) => setVariety(e.target.value)}
-            placeholder="例：桃太郎、コシヒカリ"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-          />
+          {cropOptions.length > 0 ? (
+            <div className="space-y-2">
+              <select
+                value={cropOptions.some((o) => o.crop === crop) ? `${crop}||${variety}` : "__new__"}
+                onChange={(e) => {
+                  if (e.target.value === "__new__") {
+                    setCrop("");
+                    setVariety("");
+                  } else {
+                    const [c, v] = e.target.value.split("||");
+                    setCrop(c);
+                    setVariety(v);
+                  }
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white"
+              >
+                <option value="__new__">新しい作物を入力</option>
+                {cropOptions.map((o) => (
+                  <option key={`${o.crop}||${o.variety}`} value={`${o.crop}||${o.variety}`}>
+                    {o.crop}{o.variety ? ` (${o.variety})` : ""}
+                  </option>
+                ))}
+              </select>
+              {!cropOptions.some((o) => o.crop === crop && o.variety === variety) && (
+                <>
+                  <input
+                    type="text"
+                    value={crop}
+                    onChange={(e) => setCrop(e.target.value)}
+                    placeholder="例：トマト、イネ、キュウリ"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                  <input
+                    type="text"
+                    value={variety}
+                    onChange={(e) => setVariety(e.target.value)}
+                    placeholder="品種名（例：桃太郎、コシヒカリ）"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  />
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              <input
+                type="text"
+                value={crop}
+                onChange={(e) => setCrop(e.target.value)}
+                placeholder="例：トマト、イネ、キュウリ"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+              <div className="mt-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">品種</label>
+                <input
+                  type="text"
+                  value={variety}
+                  onChange={(e) => setVariety(e.target.value)}
+                  placeholder="例：桃太郎、コシヒカリ"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              </div>
+            </>
+          )}
         </div>
 
         <div>
