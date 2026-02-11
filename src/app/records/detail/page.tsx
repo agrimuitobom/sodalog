@@ -3,13 +3,15 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
-import { getRecord, deleteRecord, updateRecordColorAnalysis } from "@/lib/records";
+import { getRecord, deleteRecord, updateRecordColorAnalysis, getUserRecordsByCrop } from "@/lib/records";
 import { GrowthRecord } from "@/types/record";
 import { FertilizerDetail } from "@/types/record";
 import { analyzeImageColor, ColorAnalysisResult } from "@/lib/colorAnalysis";
 import ColorAnalysisDisplay from "@/components/ColorAnalysisDisplay";
 import ShareButton from "@/components/ShareButton";
 import CommentSection from "@/components/CommentSection";
+import AiAdvicePanel from "@/components/AiAdvicePanel";
+import PestDiagnosisPanel from "@/components/PestDiagnosisPanel";
 import RecordWeatherBadge from "@/components/RecordWeatherBadge";
 import { getWeatherLabel, getWeatherEmoji } from "@/lib/weather";
 import { ArrowLeft, Trash2, Pencil, Calendar, MapPin, Leaf, Palette, Loader2, CloudSun, Droplets, Wind, Thermometer } from "lucide-react";
@@ -35,6 +37,7 @@ function RecordDetailContent() {
   const [deleting, setDeleting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [colorAnalysis, setColorAnalysis] = useState<ColorAnalysisResult | null>(null);
+  const [cropRecords, setCropRecords] = useState<GrowthRecord[]>([]);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/");
@@ -46,6 +49,9 @@ function RecordDetailContent() {
         .then((r) => {
           setRecord(r);
           if (r?.colorAnalysis) setColorAnalysis(r.colorAnalysis);
+          if (r && user) {
+            getUserRecordsByCrop(user.uid, r.crop).then(setCropRecords).catch(() => {});
+          }
         })
         .catch((err) => {
           console.error("Failed to load record:", err);
@@ -56,7 +62,7 @@ function RecordDetailContent() {
     } else {
       setLoadingRecord(false);
     }
-  }, [recordId]);
+  }, [recordId, user]);
 
   const handleDelete = async () => {
     if (!record?.id || !confirm("この記録を削除しますか？")) return;
@@ -272,6 +278,19 @@ function RecordDetailContent() {
             )}
           </button>
         ) : null}
+
+        {/* AI Advice */}
+        <AiAdvicePanel record={record} allRecords={cropRecords} />
+
+        {/* Pest Diagnosis */}
+        {record.imageUrl && (
+          <PestDiagnosisPanel
+            imageUrl={record.imageUrl}
+            crop={record.crop}
+            variety={record.variety}
+            memo={record.memo}
+          />
+        )}
 
         {/* Share */}
         {record.id && user && (
