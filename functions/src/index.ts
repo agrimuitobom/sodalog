@@ -43,7 +43,7 @@ export const getAiAdvice = onCall(
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey.value());
-    const model = genAI.getGenerativeModel({model: "gemini-3-flash-preview"});
+    const model = genAI.getGenerativeModel({model: "gemini-2.0-flash"});
 
     const recordsSummary = (records || []).map((r) => {
       const parts = [`日付: ${r.createdAt}`, `メモ: ${r.memo || "なし"}`];
@@ -88,8 +88,11 @@ ${recordsSummary || "記録なし"}
 
       logger.info("AI advice generated", {crop, variety});
       return {advice: text};
-    } catch (error) {
+    } catch (error: unknown) {
       logger.error("AI advice generation failed", error);
+      if (error instanceof Error && "status" in error && (error as {status: number}).status === 429) {
+        throw new HttpsError("resource-exhausted", "APIの利用制限に達しました。しばらく時間をおいて再度お試しください。");
+      }
       throw new HttpsError("internal", "AIアドバイスの生成に失敗しました");
     }
   }
@@ -115,7 +118,7 @@ export const diagnosePest = onCall(
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey.value());
-    const model = genAI.getGenerativeModel({model: "gemini-3-flash-preview"});
+    const model = genAI.getGenerativeModel({model: "gemini-2.0-flash"});
 
     // Fetch image and convert to base64
     const imageResponse = await fetch(imageUrl);
@@ -171,9 +174,12 @@ ${memo ? `ユーザーメモ: ${memo}` : ""}
         treatment: diagnosis.treatment,
         prevention: diagnosis.prevention,
       };
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof HttpsError) throw error;
       logger.error("Pest diagnosis failed", error);
+      if (error instanceof Error && "status" in error && (error as {status: number}).status === 429) {
+        throw new HttpsError("resource-exhausted", "APIの利用制限に達しました。しばらく時間をおいて再度お試しください。");
+      }
       throw new HttpsError("internal", "病害虫診断に失敗しました");
     }
   }
