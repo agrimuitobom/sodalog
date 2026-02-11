@@ -9,7 +9,7 @@
     "lint": "eslint",
     "deploy": "npm run build && npx firebase deploy",
     "deploy:hosting": "npm run build && npx firebase deploy --only hosting",
-    "deploy:rules": "npx firebase deploy --only firestore:rules,storage:rules",
+    "deploy:rules": "npx firebase deploy --only firestore:rules,storage",
     "deploy:indexes": "npx firebase deploy --only firestore:indexes"
   },
   "dependencies": {

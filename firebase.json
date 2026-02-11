@@ -24,10 +24,7 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
-  "storage": [
-    {
-      "rules": "storage.rules",
-      "bucket": "sodalog.firebasestorage.app"
-    }
-  ]
+  "storage": {
+    "rules": "storage.rules"
+  }
 }
