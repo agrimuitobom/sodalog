@@ -86,18 +86,18 @@ export default function DashboardPage() {
 
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
-          <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-1">
+          <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 -ml-2 rounded-full hover:bg-gray-100" aria-label="前の月">
             <ChevronLeft className="w-5 h-5 text-gray-600" />
           </button>
           <h2 className="text-lg font-bold text-gray-800">
             {format(currentMonth, "yyyy年M月", { locale: ja })}
           </h2>
-          <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-1">
+          <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="p-2 -mr-2 rounded-full hover:bg-gray-100" aria-label="次の月">
             <ChevronRight className="w-5 h-5 text-gray-600" />
           </button>
         </div>
 
-        <div className="grid grid-cols-7 gap-1 mb-4">
+        <div className="grid grid-cols-7 gap-0.5 mb-4">
           {dayLabels.map((label) => (
             <div key={label} className="text-center text-xs font-medium text-gray-500 py-1">
               {label}
@@ -115,7 +115,7 @@ export default function DashboardPage() {
               <button
                 key={key}
                 onClick={() => setSelectedDate(day)}
-                className={`aspect-square flex flex-col items-center justify-center rounded-lg text-sm relative ${
+                className={`min-h-[44px] flex flex-col items-center justify-center rounded-lg text-sm relative ${
                   isSelected
                     ? "bg-green-600 text-white"
                     : isToday
@@ -177,11 +177,11 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-center text-gray-400 py-4 text-sm">記録がありません</p>
+              <p className="text-center text-gray-500 py-4 text-sm">記録がありません</p>
             )}
           </div>
         ) : (
-          <p className="text-center text-gray-400 py-4 text-sm">
+          <p className="text-center text-gray-500 py-4 text-sm">
             日付をタップして記録を確認
           </p>
         )}

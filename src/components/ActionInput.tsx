@@ -73,7 +73,7 @@ export default function ActionInput({ actions, onChange }: ActionInputProps) {
                 onChange={(e) =>
                   updateAction(index, { ...action.detail, name: e.target.value } as FertilizerDetail)
                 }
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm"
               />
               <div className="flex gap-2">
                 <input
@@ -83,14 +83,14 @@ export default function ActionInput({ actions, onChange }: ActionInputProps) {
                   onChange={(e) =>
                     updateAction(index, { ...action.detail, amount: e.target.value } as FertilizerDetail)
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  className="flex-1 px-3 py-2.5 border border-gray-300 rounded-md text-sm"
                 />
                 <select
                   value={(action.detail as FertilizerDetail).unit}
                   onChange={(e) =>
                     updateAction(index, { ...action.detail, unit: e.target.value } as FertilizerDetail)
                   }
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  className="px-3 py-2.5 border border-gray-300 rounded-md text-sm"
                 >
                   <option value="g">g</option>
                   <option value="kg">kg</option>
@@ -107,7 +107,7 @@ export default function ActionInput({ actions, onChange }: ActionInputProps) {
               placeholder="剪定方法"
               value={(action.detail as { method: string }).method}
               onChange={(e) => updateAction(index, { method: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm"
             />
           )}
 
@@ -117,7 +117,7 @@ export default function ActionInput({ actions, onChange }: ActionInputProps) {
               placeholder="灌水量（例：2L）"
               value={(action.detail as { amount: string }).amount}
               onChange={(e) => updateAction(index, { amount: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm"
             />
           )}
 
@@ -127,7 +127,7 @@ export default function ActionInput({ actions, onChange }: ActionInputProps) {
               placeholder="作業内容"
               value={(action.detail as { description: string }).description}
               onChange={(e) => updateAction(index, { description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-md text-sm"
             />
           )}
         </div>
@@ -140,7 +140,7 @@ export default function ActionInput({ actions, onChange }: ActionInputProps) {
               key={type}
               type="button"
               onClick={() => addAction(type)}
-              className="px-3 py-2 bg-green-50 text-green-700 rounded-md text-sm font-medium hover:bg-green-100 border border-green-200"
+              className="px-3 py-2.5 bg-green-50 text-green-700 rounded-md text-sm font-medium hover:bg-green-100 border border-green-200"
             >
               {actionTypeLabels[type]}
             </button>

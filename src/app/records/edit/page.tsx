@@ -135,7 +135,7 @@ function EditRecordContent() {
             type="date"
             value={recordDate}
             onChange={(e) => setRecordDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
           />
         </div>
 
@@ -149,7 +149,7 @@ function EditRecordContent() {
                 className="w-full h-48 object-cover"
               />
             </div>
-            <p className="text-xs text-gray-400">新しい写真を選択すると差し替えられます</p>
+            <p className="text-xs text-gray-500">新しい写真を選択すると差し替えられます</p>
           </div>
         ) : null}
 
@@ -171,7 +171,7 @@ function EditRecordContent() {
             onChange={(e) => setCrop(e.target.value)}
             placeholder="例：トマト、イネ、キュウリ"
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
           />
         </div>
 
@@ -182,7 +182,7 @@ function EditRecordContent() {
             value={variety}
             onChange={(e) => setVariety(e.target.value)}
             placeholder="例：桃太郎、コシヒカリ"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
           />
         </div>
 
@@ -193,7 +193,7 @@ function EditRecordContent() {
             value={plotId}
             onChange={(e) => setPlotId(e.target.value)}
             placeholder="例：A棟1号ハウス、露地3番"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
           />
         </div>
 
@@ -204,7 +204,7 @@ function EditRecordContent() {
             onChange={(e) => setMemo(e.target.value)}
             placeholder="観察内容や気づいたことを記録..."
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
           />
         </div>
 

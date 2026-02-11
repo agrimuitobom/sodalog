@@ -117,7 +117,7 @@ export default function AnalysisPage() {
           <div className="text-center py-12">
             <BarChart3 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500">色解析データがありません</p>
-            <p className="text-gray-400 text-sm mt-1">
+            <p className="text-gray-500 text-sm mt-1">
               記録詳細画面で「色を解析する」を実行してください
             </p>
           </div>
