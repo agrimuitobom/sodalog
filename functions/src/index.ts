@@ -43,7 +43,7 @@ export const getAiAdvice = onCall(
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey.value());
-    const model = genAI.getGenerativeModel({model: "gemini-2.0-flash"});
+    const model = genAI.getGenerativeModel({model: "gemini-2.5-flash"});
 
     const recordsSummary = (records || []).map((r) => {
       const parts = [`日付: ${r.createdAt}`, `メモ: ${r.memo || "なし"}`];
@@ -118,7 +118,7 @@ export const diagnosePest = onCall(
     }
 
     const genAI = new GoogleGenerativeAI(geminiApiKey.value());
-    const model = genAI.getGenerativeModel({model: "gemini-2.0-flash"});
+    const model = genAI.getGenerativeModel({model: "gemini-2.5-flash"});
 
     // Fetch image and convert to base64
     const imageResponse = await fetch(imageUrl);
