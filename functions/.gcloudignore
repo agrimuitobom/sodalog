@@ -1,0 +1,10 @@
+# Dependencies (installed on server via npm install)
+node_modules/
+
+# TypeScript source (not needed at runtime)
+src/
+
+# Config files
+tsconfig.json
+.eslintrc*
+.gitignore
