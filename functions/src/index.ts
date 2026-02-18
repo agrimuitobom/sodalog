@@ -2,7 +2,7 @@ import {setGlobalOptions} from "firebase-functions";
 import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
 import {defineSecret} from "firebase-functions/params";
-import {GoogleGenerativeAI} from "@google/generative-ai";
+import {GoogleGenAI} from "@google/genai";
 
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
@@ -48,8 +48,7 @@ export const getAiAdvice = onCall(
       throw new HttpsError("failed-precondition", "AI機能の設定が完了していません。管理者にお問い合わせください。");
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({model: "gemini-2.5-flash"});
+    const ai = new GoogleGenAI({apiKey});
 
     const recordsSummary = (records || []).map((r) => {
       const parts = [`日付: ${r.createdAt}`, `メモ: ${r.memo || "なし"}`];
@@ -88,9 +87,11 @@ ${recordsSummary || "記録なし"}
 簡潔に、実用的なアドバイスをお願いします（300文字以内）。`;
 
     try {
-      const result = await model.generateContent(prompt);
-      const response = result.response;
-      const text = response.text();
+      const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+      const text = result.text ?? "";
 
       logger.info("AI advice generated", {crop, variety});
       return {advice: text};
@@ -98,7 +99,7 @@ ${recordsSummary || "記録なし"}
       if (error instanceof HttpsError) throw error;
       const errMsg = error instanceof Error ? error.message : String(error);
       logger.error("AI advice generation failed", {error: errMsg});
-      if (error instanceof Error && "status" in error && (error as {status: number}).status === 429) {
+      if (errMsg.includes("429") || errMsg.includes("quota")) {
         throw new HttpsError("resource-exhausted", "APIの利用制限に達しました。しばらく時間をおいて再度お試しください。");
       }
       throw new HttpsError("internal", `AIアドバイスの生成に失敗しました: ${errMsg}`);
@@ -131,8 +132,7 @@ export const diagnosePest = onCall(
       throw new HttpsError("failed-precondition", "AI機能の設定が完了していません。管理者にお問い合わせください。");
     }
 
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({model: "gemini-2.5-flash"});
+    const ai = new GoogleGenAI({apiKey});
 
     // Fetch image and convert to base64
     const imageResponse = await fetch(imageUrl);
@@ -159,17 +159,19 @@ ${memo ? `ユーザーメモ: ${memo}` : ""}
 もし病害虫が見つからなければ、「健康」と診断し、一般的な管理アドバイスを提供してください。`;
 
     try {
-      const result = await model.generateContent([
-        prompt,
-        {
-          inlineData: {
-            mimeType,
-            data: base64Image,
+      const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {text: prompt},
+          {
+            inlineData: {
+              mimeType,
+              data: base64Image,
+            },
           },
-        },
-      ]);
-      const response = result.response;
-      const text = response.text();
+        ],
+      });
+      const text = result.text ?? "";
 
       // Parse JSON from response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -192,7 +194,7 @@ ${memo ? `ユーザーメモ: ${memo}` : ""}
       if (error instanceof HttpsError) throw error;
       const errMsg = error instanceof Error ? error.message : String(error);
       logger.error("Pest diagnosis failed", {error: errMsg});
-      if (error instanceof Error && "status" in error && (error as {status: number}).status === 429) {
+      if (errMsg.includes("429") || errMsg.includes("quota")) {
         throw new HttpsError("resource-exhausted", "APIの利用制限に達しました。しばらく時間をおいて再度お試しください。");
       }
       throw new HttpsError("internal", `病害虫診断に失敗しました: ${errMsg}`);
