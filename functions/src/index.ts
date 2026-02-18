@@ -42,7 +42,13 @@ export const getAiAdvice = onCall(
       throw new HttpsError("invalid-argument", "作物名が必要です");
     }
 
-    const genAI = new GoogleGenerativeAI(geminiApiKey.value());
+    const apiKey = geminiApiKey.value();
+    if (!apiKey) {
+      logger.error("GEMINI_API_KEY is not configured");
+      throw new HttpsError("failed-precondition", "AI機能の設定が完了していません。管理者にお問い合わせください。");
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({model: "gemini-2.5-flash"});
 
     const recordsSummary = (records || []).map((r) => {
@@ -89,11 +95,13 @@ ${recordsSummary || "記録なし"}
       logger.info("AI advice generated", {crop, variety});
       return {advice: text};
     } catch (error: unknown) {
-      logger.error("AI advice generation failed", error);
+      if (error instanceof HttpsError) throw error;
+      const errMsg = error instanceof Error ? error.message : String(error);
+      logger.error("AI advice generation failed", {error: errMsg});
       if (error instanceof Error && "status" in error && (error as {status: number}).status === 429) {
         throw new HttpsError("resource-exhausted", "APIの利用制限に達しました。しばらく時間をおいて再度お試しください。");
       }
-      throw new HttpsError("internal", "AIアドバイスの生成に失敗しました");
+      throw new HttpsError("internal", `AIアドバイスの生成に失敗しました: ${errMsg}`);
     }
   }
 );
@@ -117,7 +125,13 @@ export const diagnosePest = onCall(
       throw new HttpsError("invalid-argument", "画像URLと作物名が必要です");
     }
 
-    const genAI = new GoogleGenerativeAI(geminiApiKey.value());
+    const apiKey = geminiApiKey.value();
+    if (!apiKey) {
+      logger.error("GEMINI_API_KEY is not configured");
+      throw new HttpsError("failed-precondition", "AI機能の設定が完了していません。管理者にお問い合わせください。");
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({model: "gemini-2.5-flash"});
 
     // Fetch image and convert to base64
@@ -176,11 +190,12 @@ ${memo ? `ユーザーメモ: ${memo}` : ""}
       };
     } catch (error: unknown) {
       if (error instanceof HttpsError) throw error;
-      logger.error("Pest diagnosis failed", error);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      logger.error("Pest diagnosis failed", {error: errMsg});
       if (error instanceof Error && "status" in error && (error as {status: number}).status === 429) {
         throw new HttpsError("resource-exhausted", "APIの利用制限に達しました。しばらく時間をおいて再度お試しください。");
       }
-      throw new HttpsError("internal", "病害虫診断に失敗しました");
+      throw new HttpsError("internal", `病害虫診断に失敗しました: ${errMsg}`);
     }
   }
 );
