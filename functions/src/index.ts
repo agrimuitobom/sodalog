@@ -49,6 +49,7 @@ export const getAiAdvice = onCall(
     }
 
     const ai = new GoogleGenAI({apiKey});
+    logger.info("GoogleGenAI initialized", {crop, variety});
 
     const recordsSummary = (records || []).map((r) => {
       const parts = [`日付: ${r.createdAt}`, `メモ: ${r.memo || "なし"}`];
@@ -87,6 +88,7 @@ ${recordsSummary || "記録なし"}
 簡潔に、実用的なアドバイスをお願いします（300文字以内）。`;
 
     try {
+      logger.info("Calling Gemini API", {model: "gemini-2.5-flash"});
       const result = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: prompt,
@@ -98,11 +100,12 @@ ${recordsSummary || "記録なし"}
     } catch (error: unknown) {
       if (error instanceof HttpsError) throw error;
       const errMsg = error instanceof Error ? error.message : String(error);
-      logger.error("AI advice generation failed", {error: errMsg});
+      const errName = error instanceof Error ? error.constructor.name : "unknown";
+      logger.error("AI advice generation failed", {errorName: errName, error: errMsg});
       if (errMsg.includes("429") || errMsg.includes("quota")) {
         throw new HttpsError("resource-exhausted", "APIの利用制限に達しました。しばらく時間をおいて再度お試しください。");
       }
-      throw new HttpsError("internal", `AIアドバイスの生成に失敗しました: ${errMsg}`);
+      throw new HttpsError("unknown", `AIアドバイスの生成に失敗しました: ${errMsg}`);
     }
   }
 );
