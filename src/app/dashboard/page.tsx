@@ -3,7 +3,7 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
-import { getUserRecords } from "@/lib/records";
+import { getUserRecordsByMonth } from "@/lib/records";
 import { GrowthRecord } from "@/types/record";
 import BottomNav from "@/components/BottomNav";
 import RecordCard from "@/components/RecordCard";
@@ -37,7 +37,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (user) {
-      getUserRecords(user.uid)
+      setLoadingRecords(true);
+      getUserRecordsByMonth(user.uid, currentMonth.getFullYear(), currentMonth.getMonth())
         .then((recs) => {
           setRecords(recs);
         })
@@ -48,7 +49,7 @@ export default function DashboardPage() {
           setLoadingRecords(false);
         });
     }
-  }, [user]);
+  }, [user, currentMonth]);
 
   const days = useMemo(() => {
     const start = startOfMonth(currentMonth);

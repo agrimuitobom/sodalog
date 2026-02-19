@@ -2,20 +2,25 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getUserRecords } from "@/lib/records";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { getUserRecordsPaginated, PaginatedResult } from "@/lib/records";
 import { GrowthRecord } from "@/types/record";
 import BottomNav from "@/components/BottomNav";
 import RecordCard from "@/components/RecordCard";
-import { Clock } from "lucide-react";
+import { Clock, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
+import { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 
 export default function TimelinePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [records, setRecords] = useState<GrowthRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const cursorRef = useRef<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/");
@@ -23,12 +28,44 @@ export default function TimelinePage() {
 
   useEffect(() => {
     if (user) {
-      getUserRecords(user.uid).then((recs) => {
-        setRecords(recs);
+      getUserRecordsPaginated(user.uid).then((result: PaginatedResult) => {
+        setRecords(result.records);
+        cursorRef.current = result.lastDoc;
+        setHasMore(result.hasMore);
         setLoadingRecords(false);
       });
     }
   }, [user]);
+
+  const loadMore = useCallback(async () => {
+    if (!user || loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const result = await getUserRecordsPaginated(user.uid, cursorRef.current);
+      setRecords((prev) => [...prev, ...result.records]);
+      cursorRef.current = result.lastDoc;
+      setHasMore(result.hasMore);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [user, loadingMore, hasMore]);
+
+  const sentinelRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      if (observerRef.current) observerRef.current.disconnect();
+      if (!node) return;
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting && hasMore && !loadingMore) {
+            loadMore();
+          }
+        },
+        { threshold: 0.1 }
+      );
+      observerRef.current.observe(node);
+    },
+    [hasMore, loadingMore, loadMore]
+  );
 
   const groupedRecords = records.reduce<Record<string, GrowthRecord[]>>((acc, record) => {
     const date = record.createdAt?.toDate?.() ?? new Date();
@@ -77,6 +114,21 @@ export default function TimelinePage() {
                 </div>
               </div>
             ))}
+
+            {/* Infinite scroll sentinel */}
+            <div ref={sentinelRef} className="h-4" />
+
+            {loadingMore && (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-5 h-5 animate-spin text-green-600" />
+              </div>
+            )}
+
+            {!hasMore && records.length > 0 && (
+              <p className="text-center text-xs text-gray-400 py-2">
+                すべての記録を表示しました
+              </p>
+            )}
           </div>
         )}
       </div>
