@@ -1,32 +1,235 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
 import {setGlobalOptions} from "firebase-functions";
-import {onRequest} from "firebase-functions/https";
+import {onCall, HttpsError} from "firebase-functions/v2/https";
 import * as logger from "firebase-functions/logger";
+import {defineSecret} from "firebase-functions/params";
+import {GoogleGenAI} from "@google/genai";
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+setGlobalOptions({maxInstances: 10});
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+// Detect rate limit / quota errors from @google/genai SDK
+function isRateLimitError(error: unknown): boolean {
+  if (error && typeof error === "object") {
+    const status = (error as Record<string, unknown>).status;
+    if (status === 429) return true;
+    const code = (error as Record<string, unknown>).code;
+    if (code === 429) return true;
+  }
+  const msg = error instanceof Error ? error.message : String(error);
+  return msg.includes("429") ||
+    msg.includes("quota") ||
+    msg.includes("RESOURCE_EXHAUSTED") ||
+    msg.includes("Too Many Requests") ||
+    msg.includes("rate limit");
+}
+
+// Log full error details for debugging
+function logError(label: string, error: unknown): void {
+  const errMsg = error instanceof Error ? error.message : String(error);
+  const errName = error instanceof Error ? error.constructor.name : "unknown";
+  const errStatus = error && typeof error === "object" ?
+    (error as Record<string, unknown>).status : undefined;
+  const errCode = error && typeof error === "object" ?
+    (error as Record<string, unknown>).code : undefined;
+  logger.error(label, {
+    errorName: errName,
+    errorStatus: errStatus,
+    errorCode: errCode,
+    error: errMsg,
+  });
+}
+
+interface RecordData {
+  crop: string;
+  variety: string;
+  memo: string;
+  actions: Array<{type: string; detail: Record<string, string>}>;
+  colorAnalysis?: {r: number; g: number; b: number; greenRatio: number};
+  weather?: {
+    temperature: number;
+    humidity: number;
+    precipitation: number;
+    windSpeed: number;
+    weatherCode: number;
+  };
+  createdAt: string;
+}
+
+// AI cultivation advice based on growth records
+export const getAiAdvice = onCall(
+  {secrets: [geminiApiKey], region: "asia-northeast1"},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "ログインが必要です");
+    }
+
+    const {records, crop, variety} = request.data as {
+      records: RecordData[];
+      crop: string;
+      variety: string;
+    };
+
+    if (!crop) {
+      throw new HttpsError("invalid-argument", "作物名が必要です");
+    }
+
+    const apiKey = geminiApiKey.value();
+    if (!apiKey) {
+      logger.error("GEMINI_API_KEY is not configured");
+      throw new HttpsError("failed-precondition", "AI機能の設定が完了していません。管理者にお問い合わせください。");
+    }
+
+    const ai = new GoogleGenAI({apiKey});
+    logger.info("GoogleGenAI initialized", {crop, variety});
+
+    const recordsSummary = (records || []).map((r) => {
+      const parts = [`日付: ${r.createdAt}`, `メモ: ${r.memo || "なし"}`];
+      if (r.actions?.length) {
+        const actionTexts = r.actions.map((a) => {
+          if (a.type === "fertilizer") {
+            return `施肥(${a.detail.name || ""} ${a.detail.amount || ""}${a.detail.unit || ""})`;
+          }
+          if (a.type === "watering") return `水やり(${a.detail.amount || ""})`;
+          if (a.type === "pruning") return `剪定(${a.detail.method || ""})`;
+          return `その他(${a.detail.description || ""})`;
+        });
+        parts.push(`作業: ${actionTexts.join(", ")}`);
+      }
+      if (r.colorAnalysis) {
+        parts.push(`緑色率: ${r.colorAnalysis.greenRatio}%`);
+      }
+      if (r.weather) {
+        parts.push(`気温: ${r.weather.temperature}°C, 湿度: ${r.weather.humidity}%`);
+      }
+      return parts.join(" / ");
+    }).join("\n");
+
+    const prompt = `あなたは経験豊富な農業アドバイザーです。
+以下の栽培記録に基づいて、「${crop}${variety ? `（品種: ${variety}）` : ""}」の栽培アドバイスを日本語で提供してください。
+
+【栽培記録】
+${recordsSummary || "記録なし"}
+
+以下の点についてアドバイスしてください：
+1. 現在の生育状況の評価
+2. 今後の管理作業の推奨（水やり、施肥、剪定など）
+3. 注意すべき病害虫
+4. 季節に応じたアドバイス
+
+簡潔に、実用的なアドバイスをお願いします（300文字以内）。`;
+
+    try {
+      logger.info("Calling Gemini API", {model: "gemini-2.5-flash"});
+      const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+      const text = result.text ?? "";
+
+      logger.info("AI advice generated", {crop, variety});
+      return {advice: text};
+    } catch (error: unknown) {
+      if (error instanceof HttpsError) throw error;
+      logError("AI advice generation failed", error);
+      if (isRateLimitError(error)) {
+        throw new HttpsError("resource-exhausted", "APIの利用制限に達しました。しばらく時間をおいて再度お試しください。");
+      }
+      throw new HttpsError("internal", "AIアドバイスの生成に失敗しました");
+    }
+  }
+);
+
+// AI pest/disease diagnosis from image
+export const diagnosePest = onCall(
+  {secrets: [geminiApiKey], region: "asia-northeast1"},
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError("unauthenticated", "ログインが必要です");
+    }
+
+    const {imageUrl, crop, variety, memo} = request.data as {
+      imageUrl: string;
+      crop: string;
+      variety?: string;
+      memo?: string;
+    };
+
+    if (!imageUrl || !crop) {
+      throw new HttpsError("invalid-argument", "画像URLと作物名が必要です");
+    }
+
+    const apiKey = geminiApiKey.value();
+    if (!apiKey) {
+      logger.error("GEMINI_API_KEY is not configured");
+      throw new HttpsError("failed-precondition", "AI機能の設定が完了していません。管理者にお問い合わせください。");
+    }
+
+    const ai = new GoogleGenAI({apiKey});
+
+    // Fetch image and convert to base64
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new HttpsError("internal", "画像の取得に失敗しました");
+    }
+    const imageBuffer = await imageResponse.arrayBuffer();
+    const base64Image = Buffer.from(imageBuffer).toString("base64");
+    const mimeType = imageResponse.headers.get("content-type") || "image/jpeg";
+
+    const prompt = `あなたは植物病理学の専門家です。
+この画像は「${crop}${variety ? `（品種: ${variety}）` : ""}」の写真です。
+${memo ? `ユーザーメモ: ${memo}` : ""}
+
+この画像を分析して、以下の形式でJSON形式で回答してください（JSON以外のテキストは不要です）：
+{
+  "diagnosis": "診断結果（病害虫名または「健康」）",
+  "confidence": 0.0～1.0の信頼度,
+  "details": "詳しい説明（症状の特徴など）",
+  "treatment": "対処法・推奨される処置",
+  "prevention": "予防策"
+}
+
+もし病害虫が見つからなければ、「健康」と診断し、一般的な管理アドバイスを提供してください。`;
+
+    try {
+      const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {text: prompt},
+          {
+            inlineData: {
+              mimeType,
+              data: base64Image,
+            },
+          },
+        ],
+      });
+      const text = result.text ?? "";
+
+      // Parse JSON from response
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        logger.error("Failed to parse AI diagnosis response", {text});
+        throw new HttpsError("internal", "診断結果の解析に失敗しました");
+      }
+
+      const diagnosis = JSON.parse(jsonMatch[0]);
+      logger.info("Pest diagnosis completed", {crop, diagnosis: diagnosis.diagnosis});
+
+      return {
+        result: diagnosis.diagnosis,
+        confidence: diagnosis.confidence,
+        details: diagnosis.details,
+        treatment: diagnosis.treatment,
+        prevention: diagnosis.prevention,
+      };
+    } catch (error: unknown) {
+      if (error instanceof HttpsError) throw error;
+      logError("Pest diagnosis failed", error);
+      if (isRateLimitError(error)) {
+        throw new HttpsError("resource-exhausted", "APIの利用制限に達しました。しばらく時間をおいて再度お試しください。");
+      }
+      throw new HttpsError("internal", "病害虫診断に失敗しました");
+    }
+  }
+);

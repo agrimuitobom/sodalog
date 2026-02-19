@@ -84,7 +84,7 @@ export default function CommentSection({ recordDocId, readOnly = false }: Commen
       ) : (
         <div>
           {comments.length === 0 ? (
-            <p className="text-center text-gray-400 text-sm py-6">
+            <p className="text-center text-gray-500 text-sm py-6">
               まだコメントがありません
             </p>
           ) : (

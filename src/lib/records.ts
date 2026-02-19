@@ -7,9 +7,13 @@ import {
   query,
   where,
   orderBy,
+  limit,
+  startAfter,
   Timestamp,
   deleteDoc,
   updateDoc,
+  QueryDocumentSnapshot,
+  DocumentData,
 } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { getFirebaseDb, getFirebaseStorage } from "./firebase";
@@ -187,6 +191,83 @@ export async function getUserRecordsByPlot(
     where("userId", "==", userId),
     where("plotId", "==", plotId),
     orderBy("createdAt", "asc")
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as GrowthRecord));
+}
+
+export interface PaginatedResult {
+  records: GrowthRecord[];
+  lastDoc: QueryDocumentSnapshot<DocumentData> | null;
+  hasMore: boolean;
+}
+
+export interface RecordFilters {
+  crop?: string;
+  plotId?: string;
+}
+
+const PAGE_SIZE = 20;
+
+export async function getUserRecordsPaginated(
+  userId: string,
+  cursor?: QueryDocumentSnapshot<DocumentData> | null,
+  filters?: RecordFilters
+): Promise<PaginatedResult> {
+  const db = getFirebaseDb();
+  const col = collection(db, RECORDS_COLLECTION);
+  const constraints = [where("userId", "==", userId)];
+  if (filters?.crop) constraints.push(where("crop", "==", filters.crop));
+  if (filters?.plotId) constraints.push(where("plotId", "==", filters.plotId));
+
+  const q = cursor
+    ? query(col, ...constraints, orderBy("createdAt", "desc"), startAfter(cursor), limit(PAGE_SIZE + 1))
+    : query(col, ...constraints, orderBy("createdAt", "desc"), limit(PAGE_SIZE + 1));
+  const snapshot = await getDocs(q);
+  const hasMore = snapshot.docs.length > PAGE_SIZE;
+  const docs = hasMore ? snapshot.docs.slice(0, PAGE_SIZE) : snapshot.docs;
+  const lastDoc = docs.length > 0 ? docs[docs.length - 1] : null;
+  const records = docs.map((d) => ({ id: d.id, ...d.data() } as GrowthRecord));
+  return { records, lastDoc, hasMore };
+}
+
+export async function getUserFilterOptions(
+  userId: string
+): Promise<{ crops: string[]; plots: string[] }> {
+  const db = getFirebaseDb();
+  const q = query(
+    collection(db, RECORDS_COLLECTION),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  const snapshot = await getDocs(q);
+  const cropSet = new Set<string>();
+  const plotSet = new Set<string>();
+  for (const d of snapshot.docs) {
+    const data = d.data();
+    if (data.crop) cropSet.add(data.crop);
+    if (data.plotId) plotSet.add(data.plotId);
+  }
+  return {
+    crops: Array.from(cropSet).sort(),
+    plots: Array.from(plotSet).sort(),
+  };
+}
+
+export async function getUserRecordsByMonth(
+  userId: string,
+  year: number,
+  month: number
+): Promise<GrowthRecord[]> {
+  const db = getFirebaseDb();
+  const startDate = new Date(year, month, 1);
+  const endDate = new Date(year, month + 1, 1);
+  const q = query(
+    collection(db, RECORDS_COLLECTION),
+    where("userId", "==", userId),
+    where("createdAt", ">=", Timestamp.fromDate(startDate)),
+    where("createdAt", "<", Timestamp.fromDate(endDate)),
+    orderBy("createdAt", "desc")
   );
   const snapshot = await getDocs(q);
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as GrowthRecord));

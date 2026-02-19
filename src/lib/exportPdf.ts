@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 import { GrowthRecord, FertilizerDetail } from "@/types/record";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -26,15 +26,51 @@ function formatActions(record: GrowthRecord): string {
     .join("; ");
 }
 
-// Extend jsPDF type for autotable
-declare module "jspdf" {
-  interface jsPDF {
-    autoTable: (options: Record<string, unknown>) => jsPDF;
+// Japanese font cache
+let fontCache: string | null = null;
+
+async function loadJapaneseFont(doc: jsPDF): Promise<boolean> {
+  if (!fontCache) {
+    // Try loading a Japanese TTF font
+    const urls = [
+      "/fonts/NotoSansJP-Regular.ttf",
+    ];
+    for (const url of urls) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) continue;
+        const buffer = await res.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        const chunkSize = 8192;
+        for (let i = 0; i < bytes.length; i += chunkSize) {
+          binary += String.fromCharCode.apply(
+            null,
+            Array.from(bytes.subarray(i, i + chunkSize))
+          );
+        }
+        fontCache = btoa(binary);
+        break;
+      } catch {
+        continue;
+      }
+    }
   }
+
+  if (fontCache) {
+    doc.addFileToVFS("NotoSansJP-Regular.ttf", fontCache);
+    doc.addFont("NotoSansJP-Regular.ttf", "NotoSansJP", "normal");
+    doc.setFont("NotoSansJP");
+    return true;
+  }
+  return false;
 }
 
-export function exportRecordsToPdf(records: GrowthRecord[], title: string) {
+export async function exportRecordsToPdf(records: GrowthRecord[], title: string) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+
+  // Try loading Japanese font
+  const hasJapaneseFont = await loadJapaneseFont(doc);
 
   // Title
   doc.setFontSize(16);
@@ -42,40 +78,37 @@ export function exportRecordsToPdf(records: GrowthRecord[], title: string) {
 
   doc.setFontSize(10);
   doc.text(
-    `Export: ${format(new Date(), "yyyy/MM/dd HH:mm", { locale: ja })}  |  ${records.length} records`,
+    `${format(new Date(), "yyyy/MM/dd HH:mm", { locale: ja })}  |  ${records.length} 件`,
     14,
     22
   );
 
-  // Table data
-  const headers = [
-    "Date",
-    "Crop",
-    "Variety",
-    "Plot",
-    "Memo",
-    "Actions",
-    "Green%",
-  ];
+  const headers = hasJapaneseFont
+    ? ["日付", "作物", "品種", "圃場", "メモ", "作業", "緑%"]
+    : ["Date", "Crop", "Variety", "Plot", "Memo", "Actions", "Green%"];
 
   const rows = records.map((r) => {
     const date = r.createdAt?.toDate?.() ?? new Date();
     return [
       format(date, "MM/dd HH:mm"),
       r.crop,
-      r.variety,
-      r.plotId,
+      r.variety || "",
+      r.plotId || "",
       r.memo.length > 30 ? r.memo.substring(0, 30) + "..." : r.memo,
       formatActions(r),
       r.colorAnalysis?.greenRatio?.toString() ?? "-",
     ];
   });
 
-  doc.autoTable({
+  autoTable(doc, {
     head: [headers],
     body: rows,
     startY: 28,
-    styles: { fontSize: 8, cellPadding: 2 },
+    styles: {
+      fontSize: 8,
+      cellPadding: 2,
+      ...(hasJapaneseFont ? { font: "NotoSansJP" } : {}),
+    },
     headStyles: { fillColor: [22, 163, 74] },
     alternateRowStyles: { fillColor: [245, 250, 245] },
     columnStyles: {
@@ -85,5 +118,14 @@ export function exportRecordsToPdf(records: GrowthRecord[], title: string) {
     },
   });
 
-  doc.save(`${title}.pdf`);
+  // Use Blob download for better mobile compatibility
+  const blob = doc.output("blob");
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${title}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
 }

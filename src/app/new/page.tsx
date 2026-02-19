@@ -139,10 +139,10 @@ export default function NewRecordPage() {
               <span>{getWeatherEmoji(weather.weatherCode)}</span>
               <span className="text-gray-700 font-medium">{weather.temperature}°C</span>
               <span className="text-blue-500">{weather.humidity}%</span>
-              <span className="text-gray-400 text-xs">{getWeatherLabel(weather.weatherCode)}</span>
+              <span className="text-gray-500 text-xs">{getWeatherLabel(weather.weatherCode)}</span>
             </div>
           ) : (
-            <p className="text-xs text-gray-400">位置情報が取得できませんでした</p>
+            <p className="text-xs text-gray-500">位置情報が取得できませんでした</p>
           )}
         </div>
 
@@ -158,9 +158,9 @@ export default function NewRecordPage() {
             type="date"
             value={recordDate}
             onChange={(e) => setRecordDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
           />
-          <p className="text-xs text-gray-400 mt-1">過去の日付で記録を入力できます</p>
+          <p className="text-xs text-gray-500 mt-1">過去の日付で記録を入力できます</p>
         </div>
 
         <CameraCapture
@@ -186,7 +186,7 @@ export default function NewRecordPage() {
                     setVariety(v);
                   }
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white"
               >
                 <option value="__new__">新しい作物を入力</option>
                 {cropOptions.map((o) => (
@@ -203,14 +203,14 @@ export default function NewRecordPage() {
                     onChange={(e) => setCrop(e.target.value)}
                     placeholder="例：トマト、イネ、キュウリ"
                     required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                   <input
                     type="text"
                     value={variety}
                     onChange={(e) => setVariety(e.target.value)}
                     placeholder="品種名（例：桃太郎、コシヒカリ）"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                   />
                 </>
               )}
@@ -223,7 +223,7 @@ export default function NewRecordPage() {
                 onChange={(e) => setCrop(e.target.value)}
                 placeholder="例：トマト、イネ、キュウリ"
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
               />
               <div className="mt-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">品種</label>
@@ -232,7 +232,7 @@ export default function NewRecordPage() {
                   value={variety}
                   onChange={(e) => setVariety(e.target.value)}
                   placeholder="例：桃太郎、コシヒカリ"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 />
               </div>
             </>
@@ -246,7 +246,7 @@ export default function NewRecordPage() {
             value={plotId}
             onChange={(e) => setPlotId(e.target.value)}
             placeholder="例：A棟1号ハウス、露地3番"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
           />
         </div>
 
@@ -257,7 +257,7 @@ export default function NewRecordPage() {
             onChange={(e) => setMemo(e.target.value)}
             placeholder="観察内容や気づいたことを記録..."
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 resize-none"
           />
         </div>
 

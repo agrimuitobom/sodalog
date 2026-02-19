@@ -1,7 +1,8 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
-import { getFirestore, Firestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, Firestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getStorage, FirebaseStorage } from "firebase/storage";
+import { getFunctions as _getFunctions, Functions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "",
@@ -20,6 +21,7 @@ function getApp(): FirebaseApp {
 let _auth: Auth | undefined;
 let _db: Firestore | undefined;
 let _storage: FirebaseStorage | undefined;
+let _functions: Functions | undefined;
 
 export function getFirebaseAuth(): Auth {
   if (!_auth) _auth = getAuth(getApp());
@@ -27,13 +29,30 @@ export function getFirebaseAuth(): Auth {
 }
 
 export function getFirebaseDb(): Firestore {
-  if (!_db) _db = getFirestore(getApp());
+  if (!_db) {
+    const app = getApp();
+    try {
+      _db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      });
+    } catch {
+      // Already initialized (e.g. hot reload), fall back to getFirestore
+      _db = getFirestore(app);
+    }
+  }
   return _db;
 }
 
 export function getFirebaseStorage(): FirebaseStorage {
   if (!_storage) _storage = getStorage(getApp());
   return _storage;
+}
+
+export function getFirebaseFunctions(): Functions {
+  if (!_functions) _functions = _getFunctions(getApp(), "asia-northeast1");
+  return _functions;
 }
 
 // Lazy exports for convenience - only access on client side

@@ -138,7 +138,7 @@ export default function ComparePage() {
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600" />
           </div>
         ) : comparedRecords.length === 0 ? (
-          <p className="text-center text-gray-400 py-8 text-sm">
+          <p className="text-center text-gray-500 py-8 text-sm">
             {mode === "individual" ? "記録を選択してください" : "該当する記録がありません"}
           </p>
         ) : (

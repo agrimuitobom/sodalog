@@ -212,7 +212,7 @@ export default function WeatherPage() {
             ))}
           </select>
           {selectedLocation === "現在地" && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-500">
               {geoLoading ? "" : locationName !== "位置を取得中..." ? `(${locationName})` : ""}
             </span>
           )}
