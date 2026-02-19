@@ -8,7 +8,7 @@ import { GrowthRecord } from "@/types/record";
 import BottomNav from "@/components/BottomNav";
 import RecordCard from "@/components/RecordCard";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin, CloudSun } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin, CloudSun, Search, X } from "lucide-react";
 import {
   format,
   startOfMonth,
@@ -31,6 +31,11 @@ export default function DashboardPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [loadingRecords, setLoadingRecords] = useState(true);
 
+  // Filter state
+  const [filterCrop, setFilterCrop] = useState("");
+  const [filterPlot, setFilterPlot] = useState("");
+  const [searchText, setSearchText] = useState("");
+
   useEffect(() => {
     if (!loading && !user) router.replace("/");
   }, [user, loading, router]);
@@ -51,22 +56,53 @@ export default function DashboardPage() {
     }
   }, [user, currentMonth]);
 
+  // Unique crops/plots from current month records
+  const crops = useMemo(
+    () => Array.from(new Set(records.map((r) => r.crop))).sort(),
+    [records]
+  );
+  const plots = useMemo(
+    () => Array.from(new Set(records.filter((r) => r.plotId).map((r) => r.plotId))).sort(),
+    [records]
+  );
+
+  const activeFilterCount =
+    (filterCrop ? 1 : 0) + (filterPlot ? 1 : 0) + (searchText ? 1 : 0);
+
   const days = useMemo(() => {
     const start = startOfMonth(currentMonth);
     const end = endOfMonth(currentMonth);
     return eachDayOfInterval({ start, end });
   }, [currentMonth]);
 
+  // Filter records for calendar dots (show dots based on filters)
+  const filteredRecords = useMemo(() => {
+    let result = records;
+    if (filterCrop) result = result.filter((r) => r.crop === filterCrop);
+    if (filterPlot) result = result.filter((r) => r.plotId === filterPlot);
+    if (searchText.trim()) {
+      const q = searchText.toLowerCase();
+      result = result.filter(
+        (r) =>
+          r.crop.toLowerCase().includes(q) ||
+          (r.variety && r.variety.toLowerCase().includes(q)) ||
+          (r.memo && r.memo.toLowerCase().includes(q)) ||
+          (r.plotId && r.plotId.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [records, filterCrop, filterPlot, searchText]);
+
   const recordsByDate = useMemo(() => {
     const map = new Map<string, GrowthRecord[]>();
-    records.forEach((r) => {
+    filteredRecords.forEach((r) => {
       const date = r.createdAt?.toDate?.() ?? new Date();
       const key = format(date, "yyyy-MM-dd");
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(r);
     });
     return map;
-  }, [records]);
+  }, [filteredRecords]);
 
   const selectedRecords = useMemo(() => {
     if (!selectedDate) return [];
@@ -75,6 +111,12 @@ export default function DashboardPage() {
   }, [selectedDate, recordsByDate]);
 
   const startPadding = getDay(startOfMonth(currentMonth));
+
+  const clearFilters = () => {
+    setFilterCrop("");
+    setFilterPlot("");
+    setSearchText("");
+  };
 
   if (loading || !user) return null;
 
@@ -86,6 +128,50 @@ export default function DashboardPage() {
       </header>
 
       <div className="p-4">
+        {/* Search & filters */}
+        <div className="mb-4 space-y-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="記録を検索..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            />
+          </div>
+          <div className="flex gap-2">
+            <select
+              value={filterCrop}
+              onChange={(e) => setFilterCrop(e.target.value)}
+              className="flex-1 px-2 py-1.5 border border-gray-200 rounded-md text-xs bg-white"
+            >
+              <option value="">全作物</option>
+              {crops.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+            <select
+              value={filterPlot}
+              onChange={(e) => setFilterPlot(e.target.value)}
+              className="flex-1 px-2 py-1.5 border border-gray-200 rounded-md text-xs bg-white"
+            >
+              <option value="">全圃場</option>
+              {plots.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            {activeFilterCount > 0 && (
+              <button
+                onClick={clearFilters}
+                className="flex items-center gap-1 px-2 text-xs text-gray-500 hover:text-gray-700"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
         <div className="flex items-center justify-between mb-4">
           <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 -ml-2 rounded-full hover:bg-gray-100" aria-label="前の月">
             <ChevronLeft className="w-5 h-5 text-gray-600" />
@@ -170,6 +256,11 @@ export default function DashboardPage() {
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-2">
               {format(selectedDate, "M月d日(E)", { locale: ja })}の記録
+              {activeFilterCount > 0 && (
+                <span className="text-xs text-orange-500 ml-2">
+                  (フィルター適用中)
+                </span>
+              )}
             </h3>
             {selectedRecords.length > 0 ? (
               <div className="space-y-2">

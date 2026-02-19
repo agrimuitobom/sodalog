@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
+import InstallBanner from "@/components/InstallBanner";
 
 export const metadata: Metadata = {
   title: "そだログ - 栽培記録アプリ",
@@ -36,6 +37,7 @@ export default function RootLayout({
       <body className="bg-gray-50 antialiased">
         <AuthProvider>
           <main className="max-w-lg mx-auto min-h-screen">{children}</main>
+          <InstallBanner />
           <ServiceWorkerRegistration />
         </AuthProvider>
       </body>
