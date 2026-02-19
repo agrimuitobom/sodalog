@@ -8,6 +8,38 @@ const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
 setGlobalOptions({maxInstances: 10});
 
+// Detect rate limit / quota errors from @google/genai SDK
+function isRateLimitError(error: unknown): boolean {
+  if (error && typeof error === "object") {
+    const status = (error as Record<string, unknown>).status;
+    if (status === 429) return true;
+    const code = (error as Record<string, unknown>).code;
+    if (code === 429) return true;
+  }
+  const msg = error instanceof Error ? error.message : String(error);
+  return msg.includes("429") ||
+    msg.includes("quota") ||
+    msg.includes("RESOURCE_EXHAUSTED") ||
+    msg.includes("Too Many Requests") ||
+    msg.includes("rate limit");
+}
+
+// Log full error details for debugging
+function logError(label: string, error: unknown): void {
+  const errMsg = error instanceof Error ? error.message : String(error);
+  const errName = error instanceof Error ? error.constructor.name : "unknown";
+  const errStatus = error && typeof error === "object" ?
+    (error as Record<string, unknown>).status : undefined;
+  const errCode = error && typeof error === "object" ?
+    (error as Record<string, unknown>).code : undefined;
+  logger.error(label, {
+    errorName: errName,
+    errorStatus: errStatus,
+    errorCode: errCode,
+    error: errMsg,
+  });
+}
+
 interface RecordData {
   crop: string;
   variety: string;
@@ -99,13 +131,11 @@ ${recordsSummary || "記録なし"}
       return {advice: text};
     } catch (error: unknown) {
       if (error instanceof HttpsError) throw error;
-      const errMsg = error instanceof Error ? error.message : String(error);
-      const errName = error instanceof Error ? error.constructor.name : "unknown";
-      logger.error("AI advice generation failed", {errorName: errName, error: errMsg});
-      if (errMsg.includes("429") || errMsg.includes("quota")) {
+      logError("AI advice generation failed", error);
+      if (isRateLimitError(error)) {
         throw new HttpsError("resource-exhausted", "APIの利用制限に達しました。しばらく時間をおいて再度お試しください。");
       }
-      throw new HttpsError("unknown", `AIアドバイスの生成に失敗しました: ${errMsg}`);
+      throw new HttpsError("internal", "AIアドバイスの生成に失敗しました");
     }
   }
 );
@@ -195,12 +225,11 @@ ${memo ? `ユーザーメモ: ${memo}` : ""}
       };
     } catch (error: unknown) {
       if (error instanceof HttpsError) throw error;
-      const errMsg = error instanceof Error ? error.message : String(error);
-      logger.error("Pest diagnosis failed", {error: errMsg});
-      if (errMsg.includes("429") || errMsg.includes("quota")) {
+      logError("Pest diagnosis failed", error);
+      if (isRateLimitError(error)) {
         throw new HttpsError("resource-exhausted", "APIの利用制限に達しました。しばらく時間をおいて再度お試しください。");
       }
-      throw new HttpsError("internal", `病害虫診断に失敗しました: ${errMsg}`);
+      throw new HttpsError("internal", "病害虫診断に失敗しました");
     }
   }
 );
