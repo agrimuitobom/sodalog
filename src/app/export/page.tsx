@@ -93,11 +93,16 @@ export default function ExportPage() {
     setTimeout(() => setExported(null), 2000);
   };
 
-  const handleExportPdf = () => {
-    const dateStr = format(new Date(), "yyyyMMdd", { locale: ja });
-    exportRecordsToPdf(filteredRecords, `sodalog_${dateStr}`);
-    setExported("pdf");
-    setTimeout(() => setExported(null), 2000);
+  const handleExportPdf = async () => {
+    try {
+      const dateStr = format(new Date(), "yyyyMMdd", { locale: ja });
+      await exportRecordsToPdf(filteredRecords, `sodalog_${dateStr}`);
+      setExported("pdf");
+      setTimeout(() => setExported(null), 2000);
+    } catch (error) {
+      console.error("PDF export failed:", error);
+      alert("PDF出力に失敗しました。もう一度お試しください。");
+    }
   };
 
   if (loading || !user) return null;
