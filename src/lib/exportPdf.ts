@@ -1,6 +1,8 @@
 import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
+import { applyPlugin } from "jspdf-autotable";
 import { GrowthRecord, FertilizerDetail } from "@/types/record";
+
+applyPlugin(jsPDF);
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 
@@ -100,7 +102,8 @@ export async function exportRecordsToPdf(records: GrowthRecord[], title: string)
     ];
   });
 
-  autoTable(doc, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (doc as any).autoTable({
     head: [headers],
     body: rows,
     startY: 28,
