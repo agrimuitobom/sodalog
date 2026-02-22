@@ -13,6 +13,7 @@
     "deploy:indexes": "npx firebase deploy --only firestore:indexes"
   },
   "dependencies": {
+    "@fontsource/noto-sans-jp": "^5.2.9",
     "browser-image-compression": "^2.0.2",
     "date-fns": "^4.1.0",
     "firebase": "^12.9.0",
@@ -20,6 +21,7 @@
     "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
+    "noto-sans-japanese": "^1.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-firebase-hooks": "^5.1.1",
