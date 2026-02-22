@@ -1,5 +1,3 @@
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 import { GrowthRecord, FertilizerDetail } from "@/types/record";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -29,7 +27,7 @@ function formatActions(record: GrowthRecord): string {
 // Japanese font cache
 let fontCache: string | null = null;
 
-async function loadJapaneseFont(doc: jsPDF): Promise<boolean> {
+async function loadJapaneseFont(doc: InstanceType<typeof import("jspdf").jsPDF>): Promise<boolean> {
   if (!fontCache) {
     // Try loading a Japanese TTF font
     const urls = [
@@ -67,6 +65,11 @@ async function loadJapaneseFont(doc: jsPDF): Promise<boolean> {
 }
 
 export async function exportRecordsToPdf(records: GrowthRecord[], title: string) {
+  // Dynamic imports to avoid Next.js bundling issues with jspdf-autotable
+  const { jsPDF } = await import("jspdf");
+  const { applyPlugin } = await import("jspdf-autotable");
+  applyPlugin(jsPDF);
+
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
   // Try loading Japanese font
@@ -100,7 +103,8 @@ export async function exportRecordsToPdf(records: GrowthRecord[], title: string)
     ];
   });
 
-  autoTable(doc, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (doc as any).autoTable({
     head: [headers],
     body: rows,
     startY: 28,
