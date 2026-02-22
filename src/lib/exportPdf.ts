@@ -29,36 +29,33 @@ let fontCache: string | null = null;
 
 async function loadJapaneseFont(doc: InstanceType<typeof import("jspdf").jsPDF>): Promise<boolean> {
   if (!fontCache) {
-    // Try loading a Japanese TTF font
-    const urls = [
-      "/fonts/NotoSansJP-Regular.ttf",
-    ];
-    for (const url of urls) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) continue;
-        const buffer = await res.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        let binary = "";
-        const chunkSize = 8192;
-        for (let i = 0; i < bytes.length; i += chunkSize) {
-          binary += String.fromCharCode.apply(
-            null,
-            Array.from(bytes.subarray(i, i + chunkSize))
-          );
-        }
-        fontCache = btoa(binary);
-        break;
-      } catch {
-        continue;
+    try {
+      const res = await fetch("/fonts/NotoSansJP-Regular.ttf");
+      if (!res.ok) return false;
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("text/html")) return false;
+      const buffer = await res.arrayBuffer();
+      if (buffer.byteLength < 10000) return false;
+      const bytes = new Uint8Array(buffer);
+      let binary = "";
+      const chunkSize = 8192;
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(
+          null,
+          Array.from(bytes.subarray(i, i + chunkSize))
+        );
       }
+      fontCache = btoa(binary);
+    } catch {
+      return false;
     }
   }
 
   if (fontCache) {
     doc.addFileToVFS("NotoSansJP-Regular.ttf", fontCache);
     doc.addFont("NotoSansJP-Regular.ttf", "NotoSansJP", "normal");
-    doc.setFont("NotoSansJP");
+    doc.addFont("NotoSansJP-Regular.ttf", "NotoSansJP", "bold");
+    doc.setFont("NotoSansJP", "normal");
     return true;
   }
   return false;
