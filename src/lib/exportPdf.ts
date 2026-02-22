@@ -67,8 +67,8 @@ async function loadJapaneseFont(doc: InstanceType<typeof import("jspdf").jsPDF>)
 export async function exportRecordsToPdf(records: GrowthRecord[], title: string) {
   // Dynamic imports to avoid Next.js bundling issues with jspdf-autotable
   const { jsPDF } = await import("jspdf");
-  const autoTableModule = await import("jspdf-autotable");
-  const autoTable = autoTableModule.default ?? autoTableModule.autoTable;
+  const { applyPlugin } = await import("jspdf-autotable");
+  applyPlugin(jsPDF);
 
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
 
@@ -103,7 +103,8 @@ export async function exportRecordsToPdf(records: GrowthRecord[], title: string)
     ];
   });
 
-  autoTable(doc, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (doc as any).autoTable({
     head: [headers],
     body: rows,
     startY: 28,
