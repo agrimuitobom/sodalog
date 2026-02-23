@@ -7,7 +7,7 @@ import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import InstallBanner from "@/components/InstallBanner";
 
 export const metadata: Metadata = {
-  title: "そだログ - 栽培記録アプリ",
+  title: "そだログ - 育てる楽しさを記録しよう",
   description: "農業高校生向けの栽培記録アプリ",
   manifest: "/manifest.json",
   appleWebApp: {
