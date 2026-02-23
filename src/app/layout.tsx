@@ -40,7 +40,10 @@ export default function RootLayout({
         <AuthProvider>
           <ToastProvider>
             <ErrorBoundary>
-              <main className="max-w-lg mx-auto min-h-screen">{children}</main>
+              <main className="max-w-lg mx-auto min-h-screen pb-16">{children}</main>
+              <footer className="max-w-lg mx-auto text-center text-xs text-gray-400 py-4">
+                &copy; {new Date().getFullYear()} そだログ
+              </footer>
             </ErrorBoundary>
             <InstallBanner />
             <ServiceWorkerRegistration />
