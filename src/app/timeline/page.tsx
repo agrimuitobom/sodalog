@@ -12,6 +12,7 @@ import {
 import { GrowthRecord, GrowthPhase, GROWTH_PHASES } from "@/types/record";
 import BottomNav from "@/components/BottomNav";
 import RecordCard from "@/components/RecordCard";
+import { RecordListSkeleton } from "@/components/Skeleton";
 import { Clock, Loader2, Search, Filter, X } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -252,9 +253,7 @@ export default function TimelinePage() {
 
       <div className="p-4">
         {loadingRecords ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600" />
-          </div>
+          <RecordListSkeleton count={4} />
         ) : filteredRecords.length === 0 ? (
           <div className="text-center py-12">
             <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />

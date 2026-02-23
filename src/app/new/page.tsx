@@ -10,11 +10,13 @@ import BottomNav from "@/components/BottomNav";
 import CameraCapture from "@/components/CameraCapture";
 import ActionInput from "@/components/ActionInput";
 import PhaseSelector from "@/components/PhaseSelector";
+import { useToast } from "@/contexts/ToastContext";
 import { ArrowLeft, Save, Loader2, CloudSun, Calendar } from "lucide-react";
 
 export default function NewRecordPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   // Format current date for date input
   const now = new Date();
@@ -110,10 +112,11 @@ export default function NewRecordPage() {
         weather: weatherData,
         createdAt: new Date(recordDate + "T12:00:00"),
       });
+      toast("記録を保存しました");
       router.push("/dashboard");
     } catch (error) {
       console.error("Failed to create record:", error);
-      alert("記録の保存に失敗しました");
+      toast("記録の保存に失敗しました", "error");
     } finally {
       setSaving(false);
     }

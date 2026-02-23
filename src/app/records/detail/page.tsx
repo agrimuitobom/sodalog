@@ -14,6 +14,8 @@ import AiAdvicePanel from "@/components/AiAdvicePanel";
 import PestDiagnosisPanel from "@/components/PestDiagnosisPanel";
 import RecordWeatherBadge from "@/components/RecordWeatherBadge";
 import { getWeatherLabel, getWeatherEmoji } from "@/lib/weather";
+import { DetailSkeleton } from "@/components/Skeleton";
+import { useToast } from "@/contexts/ToastContext";
 import { ArrowLeft, Trash2, Pencil, Calendar, MapPin, Leaf, Palette, Loader2, CloudSun, Droplets, Wind, Thermometer } from "lucide-react";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
@@ -32,6 +34,7 @@ function RecordDetailContent() {
   const searchParams = useSearchParams();
   const recordId = searchParams.get("id");
 
+  const { toast } = useToast();
   const [record, setRecord] = useState<GrowthRecord | null>(null);
   const [loadingRecord, setLoadingRecord] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -69,10 +72,11 @@ function RecordDetailContent() {
     setDeleting(true);
     try {
       await deleteRecord(record.id);
+      toast("記録を削除しました");
       router.push("/dashboard");
     } catch (error) {
       console.error("Failed to delete:", error);
-      alert("削除に失敗しました");
+      toast("削除に失敗しました", "error");
       setDeleting(false);
     }
   };
@@ -86,7 +90,7 @@ function RecordDetailContent() {
       await updateRecordColorAnalysis(record.id, result);
     } catch (error) {
       console.error("Color analysis failed:", error);
-      alert("色解析に失敗しました");
+      toast("色解析に失敗しました", "error");
     } finally {
       setAnalyzing(false);
     }
@@ -96,8 +100,15 @@ function RecordDetailContent() {
 
   if (loadingRecord) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+      <div className="pb-8">
+        <header className="bg-green-600 text-white px-4 py-3 flex items-center gap-2">
+          <button onClick={() => router.back()} className="p-1">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-lg font-bold">記録詳細</h1>
+        </header>
+        <div className="w-full h-48 skeleton" />
+        <DetailSkeleton />
       </div>
     );
   }

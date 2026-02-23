@@ -9,11 +9,13 @@ import BottomNav from "@/components/BottomNav";
 import CameraCapture from "@/components/CameraCapture";
 import ActionInput from "@/components/ActionInput";
 import PhaseSelector from "@/components/PhaseSelector";
+import { useToast } from "@/contexts/ToastContext";
 import { ArrowLeft, Save, Loader2, Calendar } from "lucide-react";
 
 function EditRecordContent() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const searchParams = useSearchParams();
   const recordId = searchParams.get("id");
 
@@ -84,10 +86,11 @@ function EditRecordContent() {
         actions,
         imageFile,
       });
+      toast("記録を更新しました");
       router.push(`/records/detail?id=${record.id}`);
     } catch (error) {
       console.error("Failed to update record:", error);
-      alert("記録の更新に失敗しました");
+      toast("記録の更新に失敗しました", "error");
     } finally {
       setSaving(false);
     }

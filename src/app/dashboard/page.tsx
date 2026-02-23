@@ -7,8 +7,9 @@ import { getUserRecordsByMonth, getUserStats, UserStats } from "@/lib/records";
 import { GrowthRecord } from "@/types/record";
 import BottomNav from "@/components/BottomNav";
 import RecordCard from "@/components/RecordCard";
+import { StatsSkeleton, RecordListSkeleton } from "@/components/Skeleton";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin, CloudSun, Search, X, Flame, Leaf, BarChart3 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin, CloudSun, Search, X, Flame, Leaf } from "lucide-react";
 import {
   format,
   startOfMonth,
@@ -180,6 +181,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats widgets */}
+        {!stats && <div className="mb-4"><StatsSkeleton /></div>}
         {stats && stats.totalRecords > 0 && (
           <div className="mb-4 space-y-3">
             <div className="grid grid-cols-3 gap-2">
@@ -304,9 +306,7 @@ export default function DashboardPage() {
         </div>
 
         {loadingRecords ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600" />
-          </div>
+          <RecordListSkeleton count={2} />
         ) : selectedDate ? (
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-2">
