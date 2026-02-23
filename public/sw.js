@@ -1,4 +1,4 @@
-const CACHE_NAME = "sodalog-v2";
+const CACHE_NAME = "sodalog-v3";
 const STATIC_ASSETS = [
   "/dashboard/",
   "/new/",
