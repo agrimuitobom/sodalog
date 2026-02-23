@@ -54,7 +54,6 @@ async function loadJapaneseFont(doc: InstanceType<typeof import("jspdf").jsPDF>)
   if (fontCache) {
     doc.addFileToVFS("NotoSansJP-Regular.ttf", fontCache);
     doc.addFont("NotoSansJP-Regular.ttf", "NotoSansJP", "normal");
-    doc.addFont("NotoSansJP-Regular.ttf", "NotoSansJP", "bold");
     doc.setFont("NotoSansJP", "normal");
     return true;
   }
@@ -110,7 +109,7 @@ export async function exportRecordsToPdf(records: GrowthRecord[], title: string)
       cellPadding: 2,
       ...(hasJapaneseFont ? { font: "NotoSansJP" } : {}),
     },
-    headStyles: { fillColor: [22, 163, 74] },
+    headStyles: { fillColor: [22, 163, 74], ...(hasJapaneseFont ? { fontStyle: "normal" } : {}) },
     alternateRowStyles: { fillColor: [245, 250, 245] },
     columnStyles: {
       0: { cellWidth: 25 },
