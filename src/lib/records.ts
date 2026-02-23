@@ -254,6 +254,94 @@ export async function getUserFilterOptions(
   };
 }
 
+export interface UserStats {
+  totalRecords: number;
+  totalCrops: number;
+  totalPlots: number;
+  cropCounts: { name: string; count: number }[];
+  recentStreak: number; // consecutive days with records ending today/yesterday
+  thisMonthCount: number;
+}
+
+export async function getUserStats(userId: string): Promise<UserStats> {
+  const records = await getUserRecords(userId);
+  const cropMap = new Map<string, number>();
+  const plotSet = new Set<string>();
+  const now = new Date();
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  let thisMonthCount = 0;
+
+  const recordDates = new Set<string>();
+
+  for (const r of records) {
+    cropMap.set(r.crop, (cropMap.get(r.crop) || 0) + 1);
+    if (r.plotId) plotSet.add(r.plotId);
+    const date = r.createdAt?.toDate?.() ?? new Date();
+    if (date >= thisMonthStart) thisMonthCount++;
+    const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    recordDates.add(dayKey);
+  }
+
+  // Calculate streak
+  let streak = 0;
+  const check = new Date(now);
+  // Start from today
+  for (let i = 0; i < 365; i++) {
+    const key = `${check.getFullYear()}-${check.getMonth()}-${check.getDate()}`;
+    if (recordDates.has(key)) {
+      streak++;
+    } else if (i === 0) {
+      // today has no record, that's ok, keep checking yesterday
+    } else {
+      break;
+    }
+    check.setDate(check.getDate() - 1);
+  }
+
+  const cropCounts = Array.from(cropMap.entries())
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    totalRecords: records.length,
+    totalCrops: cropMap.size,
+    totalPlots: plotSet.size,
+    cropCounts,
+    recentStreak: streak,
+    thisMonthCount,
+  };
+}
+
+export async function getUserPlotOptions(userId: string): Promise<string[]> {
+  const db = getFirebaseDb();
+  const q = query(
+    collection(db, RECORDS_COLLECTION),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc")
+  );
+  const snapshot = await getDocs(q);
+  const plotSet = new Set<string>();
+  for (const d of snapshot.docs) {
+    const plotId = d.data().plotId;
+    if (plotId) plotSet.add(plotId);
+  }
+  return Array.from(plotSet).sort();
+}
+
+export async function getLastRecordDefaults(userId: string): Promise<{ plotId: string } | null> {
+  const db = getFirebaseDb();
+  const q = query(
+    collection(db, RECORDS_COLLECTION),
+    where("userId", "==", userId),
+    orderBy("createdAt", "desc"),
+    limit(1)
+  );
+  const snapshot = await getDocs(q);
+  if (snapshot.empty) return null;
+  const data = snapshot.docs[0].data();
+  return { plotId: data.plotId || "" };
+}
+
 export async function getUserRecordsByMonth(
   userId: string,
   year: number,
