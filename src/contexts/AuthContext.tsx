@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from "firebase/auth";
+import { User, onAuthStateChanged, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 
 interface AuthContextType {
@@ -34,7 +34,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     const auth = getFirebaseAuth();
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    // WebView (LINE, Instagram, etc.) blocks signInWithPopup → use redirect instead
+    const ua = navigator.userAgent || "";
+    const isWebView =
+      /Line\//i.test(ua) ||
+      /FBAN|FBAV/i.test(ua) ||
+      /Instagram/i.test(ua) ||
+      /Twitter/i.test(ua) ||
+      /wv\)/i.test(ua);
+    if (isWebView) {
+      await signInWithRedirect(auth, provider);
+    } else {
+      await signInWithPopup(auth, provider);
+    }
   };
 
   const logout = async () => {

@@ -1,10 +1,37 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { Sprout } from "lucide-react";
+import { Sprout, ExternalLink } from "lucide-react";
+import { useState, useEffect } from "react";
+
+function useIsWebView() {
+  const [isWebView, setIsWebView] = useState(false);
+  useEffect(() => {
+    const ua = navigator.userAgent || "";
+    setIsWebView(
+      /Line\//i.test(ua) ||
+      /FBAN|FBAV/i.test(ua) ||
+      /Instagram/i.test(ua) ||
+      /Twitter/i.test(ua) ||
+      /wv\)/i.test(ua)
+    );
+  }, []);
+  return isWebView;
+}
 
 export default function LoginScreen() {
   const { signInWithGoogle } = useAuth();
+  const isWebView = useIsWebView();
+  const [loginError, setLoginError] = useState(false);
+
+  const handleLogin = async () => {
+    try {
+      setLoginError(false);
+      await signInWithGoogle();
+    } catch {
+      setLoginError(true);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-green-50 px-4">
@@ -16,8 +43,20 @@ export default function LoginScreen() {
         <p className="text-green-600 mt-2">栽培記録をかんたんに</p>
       </div>
 
+      {(isWebView || loginError) && (
+        <div className="mb-4 max-w-xs bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-center">
+          <div className="flex items-center justify-center gap-1.5 mb-1">
+            <ExternalLink className="w-4 h-4 text-amber-600" />
+            <p className="text-sm font-medium text-amber-700">ブラウザで開いてください</p>
+          </div>
+          <p className="text-xs text-amber-600">
+            アプリ内ブラウザではGoogleログインが利用できません。右上の「…」メニューから「ブラウザで開く」を選択してください。
+          </p>
+        </div>
+      )}
+
       <button
-        onClick={signInWithGoogle}
+        onClick={handleLogin}
         className="flex items-center gap-3 bg-white border border-gray-300 rounded-lg px-6 py-3 shadow-sm hover:shadow-md transition-shadow"
       >
         <svg className="w-5 h-5" viewBox="0 0 24 24">
