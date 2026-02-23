@@ -68,6 +68,44 @@ export function getWeatherEmoji(code: number): string {
 const FORECAST_API = "https://api.open-meteo.com/v1/forecast";
 const ARCHIVE_API = "https://archive-api.open-meteo.com/v1/archive";
 
+// --- localStorage cache helpers ---
+const CACHE_PREFIX = "sodalog_weather_";
+const CURRENT_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const FORECAST_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+function getCached<T>(key: string, ttl: number): T | null {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key);
+    if (!raw) return null;
+    const entry: CacheEntry<T> = JSON.parse(raw);
+    if (Date.now() - entry.timestamp > ttl) {
+      localStorage.removeItem(CACHE_PREFIX + key);
+      return null;
+    }
+    return entry.data;
+  } catch {
+    return null;
+  }
+}
+
+function setCache<T>(key: string, data: T): void {
+  try {
+    const entry: CacheEntry<T> = { data, timestamp: Date.now() };
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(entry));
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
+}
+
+function coordKey(lat: number, lon: number): string {
+  return `${lat.toFixed(2)}_${lon.toFixed(2)}`;
+}
+
 // Reverse geocoding using Nominatim (OpenStreetMap, free, no API key)
 export async function reverseGeocode(lat: number, lon: number): Promise<string> {
   try {
@@ -94,6 +132,10 @@ export async function getCurrentWeather(
   lat: number,
   lon: number
 ): Promise<WeatherCurrent> {
+  const cacheKey = `current_${coordKey(lat, lon)}`;
+  const cached = getCached<WeatherCurrent>(cacheKey, CURRENT_CACHE_TTL);
+  if (cached) return cached;
+
   const params = new URLSearchParams({
     latitude: lat.toString(),
     longitude: lon.toString(),
@@ -105,7 +147,7 @@ export async function getCurrentWeather(
   if (!res.ok) throw new Error("Failed to fetch current weather");
   const data = await res.json();
 
-  return {
+  const result: WeatherCurrent = {
     temperature: data.current.temperature_2m,
     humidity: data.current.relative_humidity_2m,
     precipitation: data.current.precipitation,
@@ -113,6 +155,9 @@ export async function getCurrentWeather(
     windDirection: data.current.wind_direction_10m,
     weatherCode: data.current.weather_code,
   };
+
+  setCache(cacheKey, result);
+  return result;
 }
 
 export async function getWeatherForecast(
@@ -120,6 +165,10 @@ export async function getWeatherForecast(
   lon: number,
   days: number = 7
 ): Promise<WeatherDaily[]> {
+  const cacheKey = `forecast_${coordKey(lat, lon)}_${days}`;
+  const cached = getCached<WeatherDaily[]>(cacheKey, FORECAST_CACHE_TTL);
+  if (cached) return cached;
+
   const params = new URLSearchParams({
     latitude: lat.toString(),
     longitude: lon.toString(),
@@ -132,7 +181,7 @@ export async function getWeatherForecast(
   if (!res.ok) throw new Error("Failed to fetch forecast");
   const data = await res.json();
 
-  return data.daily.time.map((date: string, i: number) => ({
+  const result: WeatherDaily[] = data.daily.time.map((date: string, i: number) => ({
     date,
     tempMax: data.daily.temperature_2m_max[i],
     tempMin: data.daily.temperature_2m_min[i],
@@ -141,6 +190,9 @@ export async function getWeatherForecast(
     windSpeedMax: data.daily.wind_speed_10m_max[i],
     weatherCode: data.daily.weather_code?.[i],
   }));
+
+  setCache(cacheKey, result);
+  return result;
 }
 
 export async function getHistoricalWeather(

@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { getRecord, deleteRecord, updateRecordColorAnalysis, getUserRecordsByCrop } from "@/lib/records";
 import { GrowthRecord, GROWTH_PHASES } from "@/types/record";
 import { FertilizerDetail } from "@/types/record";
@@ -15,6 +15,7 @@ import PestDiagnosisPanel from "@/components/PestDiagnosisPanel";
 import RecordWeatherBadge from "@/components/RecordWeatherBadge";
 import { getWeatherLabel, getWeatherEmoji } from "@/lib/weather";
 import { DetailSkeleton } from "@/components/Skeleton";
+import ConfirmModal from "@/components/ConfirmModal";
 import { useToast } from "@/contexts/ToastContext";
 import { ArrowLeft, Trash2, Pencil, Calendar, MapPin, Leaf, Palette, Loader2, CloudSun, Droplets, Wind, Thermometer } from "lucide-react";
 import { format } from "date-fns";
@@ -41,6 +42,7 @@ function RecordDetailContent() {
   const [analyzing, setAnalyzing] = useState(false);
   const [colorAnalysis, setColorAnalysis] = useState<ColorAnalysisResult | null>(null);
   const [cropRecords, setCropRecords] = useState<GrowthRecord[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/");
@@ -67,8 +69,14 @@ function RecordDetailContent() {
     }
   }, [recordId, user]);
 
-  const handleDelete = async () => {
-    if (!record?.id || !confirm("この記録を削除しますか？")) return;
+  const handleDeleteClick = () => {
+    if (!record?.id) return;
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!record?.id) return;
+    setShowDeleteConfirm(false);
     setDeleting(true);
     try {
       await deleteRecord(record.id);
@@ -79,7 +87,7 @@ function RecordDetailContent() {
       toast("削除に失敗しました", "error");
       setDeleting(false);
     }
-  };
+  }, [record?.id, toast, router]);
 
   const handleAnalyzeColor = async () => {
     if (!record?.imageUrl || !record.id) return;
@@ -146,7 +154,7 @@ function RecordDetailContent() {
             <Pencil className="w-5 h-5" />
           </button>
           <button
-            onClick={handleDelete}
+            onClick={handleDeleteClick}
             disabled={deleting}
             className="p-1 hover:bg-green-700 rounded"
           >
@@ -320,6 +328,17 @@ function RecordDetailContent() {
         {/* Comments */}
         {record.id && <CommentSection recordDocId={record.id} />}
       </div>
+
+      <ConfirmModal
+        open={showDeleteConfirm}
+        title="記録を削除"
+        message="この記録を削除しますか？この操作は取り消せません。"
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        variant="danger"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }

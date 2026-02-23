@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Comment } from "@/types/record";
 import { addComment, getCommentsByRecord, deleteComment } from "@/lib/comments";
 import { useAuth } from "@/contexts/AuthContext";
+import ConfirmModal from "@/components/ConfirmModal";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { Send, Trash2, MessageCircle, User } from "lucide-react";
@@ -19,6 +20,7 @@ export default function CommentSection({ recordDocId, readOnly = false }: Commen
   const [loading, setLoading] = useState(true);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   useEffect(() => {
     loadComments();
@@ -58,15 +60,17 @@ export default function CommentSection({ recordDocId, readOnly = false }: Commen
     }
   };
 
-  const handleDelete = async (commentId: string) => {
-    if (!confirm("このコメントを削除しますか？")) return;
+  const handleDeleteConfirm = useCallback(async () => {
+    if (!deleteTargetId) return;
+    const id = deleteTargetId;
+    setDeleteTargetId(null);
     try {
-      await deleteComment(commentId);
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      await deleteComment(id);
+      setComments((prev) => prev.filter((c) => c.id !== id));
     } catch (error) {
       console.error("Failed to delete comment:", error);
     }
-  };
+  }, [deleteTargetId]);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -115,7 +119,7 @@ export default function CommentSection({ recordDocId, readOnly = false }: Commen
                           </span>
                           {user && user.uid === comment.userId && !readOnly && (
                             <button
-                              onClick={() => handleDelete(comment.id!)}
+                              onClick={() => setDeleteTargetId(comment.id!)}
                               className="ml-auto text-gray-300 hover:text-red-500 transition-colors"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -154,6 +158,16 @@ export default function CommentSection({ recordDocId, readOnly = false }: Commen
           )}
         </div>
       )}
+      <ConfirmModal
+        open={deleteTargetId !== null}
+        title="コメントを削除"
+        message="このコメントを削除しますか？"
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        variant="danger"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </div>
   );
 }
