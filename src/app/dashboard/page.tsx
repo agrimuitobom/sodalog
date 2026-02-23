@@ -9,7 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import RecordCard from "@/components/RecordCard";
 import { StatsSkeleton, RecordListSkeleton } from "@/components/Skeleton";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin, CloudSun, Search, X, Flame, Leaf, TrendingUp } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin, CloudSun, Search, X, Leaf, TrendingUp, AlertTriangle } from "lucide-react";
 import {
   format,
   startOfMonth,
@@ -184,7 +184,15 @@ export default function DashboardPage() {
         {!stats && <div className="mb-4"><StatsSkeleton /></div>}
         {stats && stats.totalRecords > 0 && (
           <div className="mb-4 space-y-3">
-            <div className="grid grid-cols-3 gap-2">
+            {stats.daysSinceLastRecord !== null && stats.daysSinceLastRecord >= 7 && (
+              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                <p className="text-sm text-amber-700">
+                  最後の記録から <span className="font-bold">{stats.daysSinceLastRecord}日</span> 経過しています
+                </p>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-2">
               <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
                 <p className="text-2xl font-bold text-green-600">{stats.totalRecords}</p>
                 <p className="text-xs text-gray-500">総記録数</p>
@@ -192,13 +200,6 @@ export default function DashboardPage() {
               <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
                 <p className="text-2xl font-bold text-emerald-600">{stats.totalCrops}</p>
                 <p className="text-xs text-gray-500">作物数</p>
-              </div>
-              <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
-                <div className="flex items-center justify-center gap-1">
-                  <Flame className="w-4 h-4 text-orange-500" />
-                  <p className="text-2xl font-bold text-orange-500">{stats.recentStreak}</p>
-                </div>
-                <p className="text-xs text-gray-500">連続日数</p>
               </div>
             </div>
 
