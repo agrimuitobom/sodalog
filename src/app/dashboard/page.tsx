@@ -9,7 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import RecordCard from "@/components/RecordCard";
 import { StatsSkeleton, RecordListSkeleton } from "@/components/Skeleton";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin, CloudSun, Search, X, Flame, Leaf } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin, CloudSun, Search, X, Flame, Leaf, TrendingUp } from "lucide-react";
 import {
   format,
   startOfMonth,
@@ -281,24 +281,31 @@ export default function DashboardPage() {
         </div>
 
         {/* Quick access */}
-        <div className="flex gap-2 mb-4">
+        <div className="grid grid-cols-4 gap-2 mb-4">
+          <Link
+            href="/progress"
+            className="flex flex-col items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-700 hover:bg-gray-50"
+          >
+            <TrendingUp className="w-4 h-4 text-green-600" />
+            進捗
+          </Link>
           <Link
             href="/compare"
-            className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="flex flex-col items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-700 hover:bg-gray-50"
           >
             <GitCompare className="w-4 h-4 text-green-600" />
             比較
           </Link>
           <Link
             href="/plots"
-            className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="flex flex-col items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-700 hover:bg-gray-50"
           >
             <MapPin className="w-4 h-4 text-green-600" />
             圃場
           </Link>
           <Link
             href="/weather"
-            className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+            className="flex flex-col items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 py-2 text-xs text-gray-700 hover:bg-gray-50"
           >
             <CloudSun className="w-4 h-4 text-blue-500" />
             天気
