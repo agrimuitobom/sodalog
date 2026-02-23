@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ToastProvider } from "@/contexts/ToastContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import InstallBanner from "@/components/InstallBanner";
 
@@ -36,9 +38,13 @@ export default function RootLayout({
       </head>
       <body className="bg-gray-50 antialiased">
         <AuthProvider>
-          <main className="max-w-lg mx-auto min-h-screen">{children}</main>
-          <InstallBanner />
-          <ServiceWorkerRegistration />
+          <ToastProvider>
+            <ErrorBoundary>
+              <main className="max-w-lg mx-auto min-h-screen">{children}</main>
+            </ErrorBoundary>
+            <InstallBanner />
+            <ServiceWorkerRegistration />
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

@@ -3,12 +3,13 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
-import { getUserRecordsByMonth } from "@/lib/records";
+import { getUserRecordsByMonth, getUserStats, UserStats } from "@/lib/records";
 import { GrowthRecord } from "@/types/record";
 import BottomNav from "@/components/BottomNav";
 import RecordCard from "@/components/RecordCard";
+import { StatsSkeleton, RecordListSkeleton } from "@/components/Skeleton";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin, CloudSun, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sprout, GitCompare, MapPin, CloudSun, Search, X, Flame, Leaf } from "lucide-react";
 import {
   format,
   startOfMonth,
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [loadingRecords, setLoadingRecords] = useState(true);
+  const [stats, setStats] = useState<UserStats | null>(null);
 
   // Filter state
   const [filterCrop, setFilterCrop] = useState("");
@@ -39,6 +41,12 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!loading && !user) router.replace("/");
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (user) {
+      getUserStats(user.uid).then(setStats).catch(console.error);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -172,6 +180,55 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* Stats widgets */}
+        {!stats && <div className="mb-4"><StatsSkeleton /></div>}
+        {stats && stats.totalRecords > 0 && (
+          <div className="mb-4 space-y-3">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-green-600">{stats.totalRecords}</p>
+                <p className="text-xs text-gray-500">総記録数</p>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+                <p className="text-2xl font-bold text-emerald-600">{stats.totalCrops}</p>
+                <p className="text-xs text-gray-500">作物数</p>
+              </div>
+              <div className="bg-white border border-gray-200 rounded-lg p-3 text-center">
+                <div className="flex items-center justify-center gap-1">
+                  <Flame className="w-4 h-4 text-orange-500" />
+                  <p className="text-2xl font-bold text-orange-500">{stats.recentStreak}</p>
+                </div>
+                <p className="text-xs text-gray-500">連続日数</p>
+              </div>
+            </div>
+
+            {/* Crop breakdown */}
+            {stats.cropCounts.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-lg p-3">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <Leaf className="w-3.5 h-3.5 text-green-600" />
+                  <p className="text-xs font-medium text-gray-700">作物別記録数</p>
+                  <span className="text-xs text-gray-400 ml-auto">今月 {stats.thisMonthCount} 件</span>
+                </div>
+                <div className="space-y-1.5">
+                  {stats.cropCounts.slice(0, 5).map((c) => (
+                    <div key={c.name} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-700 w-16 truncate">{c.name}</span>
+                      <div className="flex-1 bg-gray-100 rounded-full h-2">
+                        <div
+                          className="bg-green-500 rounded-full h-2"
+                          style={{ width: `${Math.min((c.count / stats.totalRecords) * 100, 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-xs text-gray-500 w-6 text-right">{c.count}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center justify-between mb-4">
           <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="p-2 -ml-2 rounded-full hover:bg-gray-100" aria-label="前の月">
             <ChevronLeft className="w-5 h-5 text-gray-600" />
@@ -249,9 +306,7 @@ export default function DashboardPage() {
         </div>
 
         {loadingRecords ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600" />
-          </div>
+          <RecordListSkeleton count={2} />
         ) : selectedDate ? (
           <div>
             <h3 className="text-sm font-medium text-gray-500 mb-2">

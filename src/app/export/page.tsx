@@ -7,6 +7,7 @@ import { getUserRecords } from "@/lib/records";
 import { GrowthRecord } from "@/types/record";
 import { exportRecordsToCsv, downloadCsv } from "@/lib/exportCsv";
 import BottomNav from "@/components/BottomNav";
+import { useToast } from "@/contexts/ToastContext";
 import {
   ArrowLeft,
   FileSpreadsheet,
@@ -22,6 +23,7 @@ type DateRange = "all" | "month" | "week";
 export default function ExportPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
   const [records, setRecords] = useState<GrowthRecord[]>([]);
   const [loadingRecords, setLoadingRecords] = useState(true);
 
@@ -87,6 +89,7 @@ export default function ExportPage() {
     const csv = exportRecordsToCsv(filteredRecords);
     const dateStr = format(new Date(), "yyyyMMdd", { locale: ja });
     downloadCsv(csv, `sodalog_${dateStr}.csv`);
+    toast("CSVをダウンロードしました");
     setExported("csv");
     setTimeout(() => setExported(null), 2000);
   };

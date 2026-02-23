@@ -2,6 +2,18 @@ import { Timestamp } from "firebase/firestore";
 
 export type ActionType = "fertilizer" | "pruning" | "watering" | "other";
 
+export type GrowthPhase = "seeding" | "seedling" | "transplant" | "growing" | "flowering" | "fruiting" | "harvest";
+
+export const GROWTH_PHASES: { value: GrowthPhase; label: string; emoji: string }[] = [
+  { value: "seeding", label: "播種", emoji: "\u{1F331}" },
+  { value: "seedling", label: "育苗", emoji: "\u{1FAB4}" },
+  { value: "transplant", label: "定植", emoji: "\u{1F33F}" },
+  { value: "growing", label: "生育", emoji: "\u{1F33E}" },
+  { value: "flowering", label: "開花", emoji: "\u{1F33C}" },
+  { value: "fruiting", label: "結実", emoji: "\u{1F345}" },
+  { value: "harvest", label: "収穫", emoji: "\u{1F389}" },
+];
+
 export interface FertilizerDetail {
   name: string;
   amount: string;
@@ -34,6 +46,7 @@ export interface GrowthRecord {
   crop: string;
   variety: string;
   plotId: string;
+  growthPhase?: GrowthPhase;
 
   imageUrl: string;
   imageThumbnail: string;
@@ -83,6 +96,7 @@ export interface GrowthRecordInput {
   crop: string;
   variety: string;
   plotId: string;
+  growthPhase?: GrowthPhase;
   memo: string;
   actions: CultivationAction[];
   imageFile?: File | null;

@@ -3,17 +3,20 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { createRecord, getUserCropOptions } from "@/lib/records";
-import { CultivationAction } from "@/types/record";
+import { createRecord, getUserCropOptions, getUserPlotOptions, getLastRecordDefaults } from "@/lib/records";
+import { CultivationAction, GrowthPhase } from "@/types/record";
 import { getCurrentWeather, WeatherCurrent, getWeatherLabel, getWeatherEmoji } from "@/lib/weather";
 import BottomNav from "@/components/BottomNav";
 import CameraCapture from "@/components/CameraCapture";
 import ActionInput from "@/components/ActionInput";
+import PhaseSelector from "@/components/PhaseSelector";
+import { useToast } from "@/contexts/ToastContext";
 import { ArrowLeft, Save, Loader2, CloudSun, Calendar } from "lucide-react";
 
 export default function NewRecordPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
   // Format current date for date input
   const now = new Date();
@@ -27,8 +30,10 @@ export default function NewRecordPage() {
   const [variety, setVariety] = useState("");
   const [cropOptions, setCropOptions] = useState<{ crop: string; variety: string }[]>([]);
   const [plotId, setPlotId] = useState("");
+  const [growthPhase, setGrowthPhase] = useState<GrowthPhase | undefined>();
   const [memo, setMemo] = useState("");
   const [actions, setActions] = useState<CultivationAction[]>([]);
+  const [plotOptions, setPlotOptions] = useState<string[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -41,10 +46,14 @@ export default function NewRecordPage() {
     if (!loading && !user) router.replace("/");
   }, [user, loading, router]);
 
-  // Load past crop/variety options
+  // Load past crop/variety/plot options and defaults
   useEffect(() => {
     if (user) {
       getUserCropOptions(user.uid).then(setCropOptions).catch(console.error);
+      getUserPlotOptions(user.uid).then(setPlotOptions).catch(console.error);
+      getLastRecordDefaults(user.uid).then((defaults) => {
+        if (defaults?.plotId) setPlotId(defaults.plotId);
+      }).catch(console.error);
     }
   }, [user]);
 
@@ -96,16 +105,18 @@ export default function NewRecordPage() {
         crop,
         variety,
         plotId,
+        growthPhase,
         memo,
         actions,
         imageFile,
         weather: weatherData,
         createdAt: new Date(recordDate + "T12:00:00"),
       });
+      toast("記録を保存しました");
       router.push("/dashboard");
     } catch (error) {
       console.error("Failed to create record:", error);
-      alert("記録の保存に失敗しました");
+      toast("記録の保存に失敗しました", "error");
     } finally {
       setSaving(false);
     }
@@ -241,14 +252,46 @@ export default function NewRecordPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">圃場・区画</label>
-          <input
-            type="text"
-            value={plotId}
-            onChange={(e) => setPlotId(e.target.value)}
-            placeholder="例：A棟1号ハウス、露地3番"
-            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-          />
+          {plotOptions.length > 0 ? (
+            <div className="space-y-2">
+              <select
+                value={plotOptions.includes(plotId) ? plotId : "__new__"}
+                onChange={(e) => {
+                  if (e.target.value === "__new__") {
+                    setPlotId("");
+                  } else {
+                    setPlotId(e.target.value);
+                  }
+                }}
+                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white"
+              >
+                {plotOptions.map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+                <option value="__new__">新しい圃場を入力</option>
+              </select>
+              {!plotOptions.includes(plotId) && (
+                <input
+                  type="text"
+                  value={plotId}
+                  onChange={(e) => setPlotId(e.target.value)}
+                  placeholder="例：A棟1号ハウス、露地3番"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+              )}
+            </div>
+          ) : (
+            <input
+              type="text"
+              value={plotId}
+              onChange={(e) => setPlotId(e.target.value)}
+              placeholder="例：A棟1号ハウス、露地3番"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+            />
+          )}
         </div>
+
+        <PhaseSelector value={growthPhase} onChange={setGrowthPhase} />
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">メモ</label>

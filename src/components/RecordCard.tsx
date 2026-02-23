@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GrowthRecord } from "@/types/record";
+import { GrowthRecord, GROWTH_PHASES } from "@/types/record";
 import { format } from "date-fns";
 import { ja } from "date-fns/locale";
 import { Camera, Leaf } from "lucide-react";
@@ -51,6 +51,14 @@ export default function RecordCard({ record }: RecordCardProps) {
               <p className="text-sm text-gray-600 line-clamp-1">{record.memo}</p>
             )}
             <div className="flex flex-wrap gap-1 mt-1">
+              {record.growthPhase && (() => {
+                const phase = GROWTH_PHASES.find((p) => p.value === record.growthPhase);
+                return phase ? (
+                  <span className="inline-block px-1.5 py-0.5 bg-amber-50 text-amber-700 text-xs rounded border border-amber-200">
+                    {phase.emoji} {phase.label}
+                  </span>
+                ) : null;
+              })()}
               {record.actions.map((action, i) => (
                 <span
                   key={i}
