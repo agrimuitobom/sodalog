@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { getRecord, deleteRecord, updateRecordColorAnalysis, getUserRecordsByCrop } from "@/lib/records";
-import { GrowthRecord } from "@/types/record";
+import { GrowthRecord, GROWTH_PHASES } from "@/types/record";
 import { FertilizerDetail } from "@/types/record";
 import { analyzeImageColor, ColorAnalysisResult } from "@/lib/colorAnalysis";
 import ColorAnalysisDisplay from "@/components/ColorAnalysisDisplay";
@@ -164,6 +164,15 @@ function RecordDetailContent() {
             )}
           </h2>
         </div>
+
+        {record.growthPhase && (() => {
+          const phase = GROWTH_PHASES.find((p) => p.value === record.growthPhase);
+          return phase ? (
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 text-sm rounded-full border border-amber-200 w-fit">
+              {phase.emoji} {phase.label}
+            </span>
+          ) : null;
+        })()}
 
         <div className="flex items-center gap-4 text-sm text-gray-500">
           <div className="flex items-center gap-1">

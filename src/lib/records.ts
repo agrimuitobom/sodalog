@@ -78,6 +78,7 @@ export async function createRecord(
     crop: input.crop,
     variety: input.variety,
     plotId: input.plotId,
+    ...(input.growthPhase ? { growthPhase: input.growthPhase } : {}),
     imageUrl,
     imageThumbnail,
     memo: input.memo,
@@ -142,6 +143,7 @@ export async function updateRecord(
   if (data.plotId !== undefined) updateData.plotId = data.plotId;
   if (data.memo !== undefined) updateData.memo = data.memo;
   if (data.actions !== undefined) updateData.actions = data.actions;
+  if (data.growthPhase !== undefined) updateData.growthPhase = data.growthPhase;
 
   // Handle image upload
   if (data.imageFile) {

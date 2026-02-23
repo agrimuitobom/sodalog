@@ -4,10 +4,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, Suspense } from "react";
 import { getRecord, updateRecord } from "@/lib/records";
-import { GrowthRecord, CultivationAction } from "@/types/record";
+import { GrowthRecord, CultivationAction, GrowthPhase } from "@/types/record";
 import BottomNav from "@/components/BottomNav";
 import CameraCapture from "@/components/CameraCapture";
 import ActionInput from "@/components/ActionInput";
+import PhaseSelector from "@/components/PhaseSelector";
 import { ArrowLeft, Save, Loader2, Calendar } from "lucide-react";
 
 function EditRecordContent() {
@@ -28,6 +29,7 @@ function EditRecordContent() {
   const [crop, setCrop] = useState("");
   const [variety, setVariety] = useState("");
   const [plotId, setPlotId] = useState("");
+  const [growthPhase, setGrowthPhase] = useState<GrowthPhase | undefined>();
   const [memo, setMemo] = useState("");
   const [actions, setActions] = useState<CultivationAction[]>([]);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -49,6 +51,7 @@ function EditRecordContent() {
             setCrop(r.crop);
             setVariety(r.variety || "");
             setPlotId(r.plotId || "");
+            setGrowthPhase(r.growthPhase);
             setMemo(r.memo || "");
             setActions(r.actions || []);
             if (r.imageUrl) setExistingImageUrl(r.imageUrl);
@@ -76,6 +79,7 @@ function EditRecordContent() {
         crop,
         variety,
         plotId,
+        growthPhase,
         memo,
         actions,
         imageFile,
@@ -196,6 +200,8 @@ function EditRecordContent() {
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
           />
         </div>
+
+        <PhaseSelector value={growthPhase} onChange={setGrowthPhase} />
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">メモ</label>

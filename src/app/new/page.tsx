@@ -4,11 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createRecord, getUserCropOptions, getUserPlotOptions, getLastRecordDefaults } from "@/lib/records";
-import { CultivationAction } from "@/types/record";
+import { CultivationAction, GrowthPhase } from "@/types/record";
 import { getCurrentWeather, WeatherCurrent, getWeatherLabel, getWeatherEmoji } from "@/lib/weather";
 import BottomNav from "@/components/BottomNav";
 import CameraCapture from "@/components/CameraCapture";
 import ActionInput from "@/components/ActionInput";
+import PhaseSelector from "@/components/PhaseSelector";
 import { ArrowLeft, Save, Loader2, CloudSun, Calendar } from "lucide-react";
 
 export default function NewRecordPage() {
@@ -27,6 +28,7 @@ export default function NewRecordPage() {
   const [variety, setVariety] = useState("");
   const [cropOptions, setCropOptions] = useState<{ crop: string; variety: string }[]>([]);
   const [plotId, setPlotId] = useState("");
+  const [growthPhase, setGrowthPhase] = useState<GrowthPhase | undefined>();
   const [memo, setMemo] = useState("");
   const [actions, setActions] = useState<CultivationAction[]>([]);
   const [plotOptions, setPlotOptions] = useState<string[]>([]);
@@ -101,6 +103,7 @@ export default function NewRecordPage() {
         crop,
         variety,
         plotId,
+        growthPhase,
         memo,
         actions,
         imageFile,
@@ -284,6 +287,8 @@ export default function NewRecordPage() {
             />
           )}
         </div>
+
+        <PhaseSelector value={growthPhase} onChange={setGrowthPhase} />
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">メモ</label>

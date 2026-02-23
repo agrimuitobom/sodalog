@@ -9,7 +9,7 @@ import {
   PaginatedResult,
   RecordFilters,
 } from "@/lib/records";
-import { GrowthRecord } from "@/types/record";
+import { GrowthRecord, GrowthPhase, GROWTH_PHASES } from "@/types/record";
 import BottomNav from "@/components/BottomNav";
 import RecordCard from "@/components/RecordCard";
 import { Clock, Loader2, Search, Filter, X } from "lucide-react";
@@ -32,6 +32,7 @@ export default function TimelinePage() {
   const [selectedCrop, setSelectedCrop] = useState("");
   const [selectedPlot, setSelectedPlot] = useState("");
   const [searchText, setSearchText] = useState("");
+  const [selectedPhase, setSelectedPhase] = useState<GrowthPhase | "">("");
   const [crops, setCrops] = useState<string[]>([]);
   const [plots, setPlots] = useState<string[]>([]);
 
@@ -43,7 +44,7 @@ export default function TimelinePage() {
   }, [selectedCrop, selectedPlot]);
 
   const activeFilterCount =
-    (selectedCrop ? 1 : 0) + (selectedPlot ? 1 : 0) + (searchText ? 1 : 0);
+    (selectedCrop ? 1 : 0) + (selectedPlot ? 1 : 0) + (searchText ? 1 : 0) + (selectedPhase ? 1 : 0);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/");
@@ -108,18 +109,24 @@ export default function TimelinePage() {
     [hasMore, loadingMore, loadMore]
   );
 
-  // Client-side text search filter
+  // Client-side text search + phase filter
   const filteredRecords = useMemo(() => {
-    if (!searchText.trim()) return records;
-    const q = searchText.toLowerCase();
-    return records.filter(
-      (r) =>
-        r.crop.toLowerCase().includes(q) ||
-        (r.variety && r.variety.toLowerCase().includes(q)) ||
-        (r.memo && r.memo.toLowerCase().includes(q)) ||
-        (r.plotId && r.plotId.toLowerCase().includes(q))
-    );
-  }, [records, searchText]);
+    let result = records;
+    if (selectedPhase) {
+      result = result.filter((r) => r.growthPhase === selectedPhase);
+    }
+    if (searchText.trim()) {
+      const q = searchText.toLowerCase();
+      result = result.filter(
+        (r) =>
+          r.crop.toLowerCase().includes(q) ||
+          (r.variety && r.variety.toLowerCase().includes(q)) ||
+          (r.memo && r.memo.toLowerCase().includes(q)) ||
+          (r.plotId && r.plotId.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [records, searchText, selectedPhase]);
 
   const groupedRecords = filteredRecords.reduce<Record<string, GrowthRecord[]>>(
     (acc, record) => {
@@ -135,6 +142,7 @@ export default function TimelinePage() {
   const clearFilters = () => {
     setSelectedCrop("");
     setSelectedPlot("");
+    setSelectedPhase("");
     setSearchText("");
   };
 
@@ -207,6 +215,26 @@ export default function TimelinePage() {
                   </option>
                 ))}
               </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">生育フェーズ</label>
+            <div className="flex flex-wrap gap-1">
+              {GROWTH_PHASES.map((phase) => (
+                <button
+                  key={phase.value}
+                  type="button"
+                  onClick={() => setSelectedPhase(selectedPhase === phase.value ? "" : phase.value)}
+                  className={`px-2 py-1 rounded-full text-xs border transition-colors ${
+                    selectedPhase === phase.value
+                      ? "border-green-500 bg-green-50 text-green-700"
+                      : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                  }`}
+                >
+                  {phase.emoji} {phase.label}
+                </button>
+              ))}
             </div>
           </div>
 
