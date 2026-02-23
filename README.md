@@ -100,7 +100,7 @@ npx firebase login
 - 成長グラフ（Recharts）
 
 ### Phase 3
-- データエクスポート（CSV / PDF）
+- データエクスポート（CSV）← 実装済み
 - 共有リンク + コメント機能
 - 気象データ連携（Open-Meteo API）
 
