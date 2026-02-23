@@ -6,12 +6,10 @@ import { useEffect, useState, useMemo } from "react";
 import { getUserRecords } from "@/lib/records";
 import { GrowthRecord } from "@/types/record";
 import { exportRecordsToCsv, downloadCsv } from "@/lib/exportCsv";
-import { exportRecordsToPdf } from "@/lib/exportPdf";
 import BottomNav from "@/components/BottomNav";
 import {
   ArrowLeft,
   FileSpreadsheet,
-  FileText,
   Filter,
   Download,
   Check,
@@ -33,7 +31,7 @@ export default function ExportPage() {
   const [dateRange, setDateRange] = useState<DateRange>("all");
 
   // Export state
-  const [exported, setExported] = useState<"csv" | "pdf" | null>(null);
+  const [exported, setExported] = useState<"csv" | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/");
@@ -91,18 +89,6 @@ export default function ExportPage() {
     downloadCsv(csv, `sodalog_${dateStr}.csv`);
     setExported("csv");
     setTimeout(() => setExported(null), 2000);
-  };
-
-  const handleExportPdf = async () => {
-    try {
-      const dateStr = format(new Date(), "yyyyMMdd", { locale: ja });
-      await exportRecordsToPdf(filteredRecords, `sodalog_${dateStr}`);
-      setExported("pdf");
-      setTimeout(() => setExported(null), 2000);
-    } catch (error) {
-      console.error("PDF export failed:", error);
-      alert("PDF出力に失敗しました。もう一度お試しください。");
-    }
   };
 
   if (loading || !user) return null;
@@ -237,7 +223,7 @@ export default function ExportPage() {
           <button
             onClick={handleExportCsv}
             disabled={filteredRecords.length === 0}
-            className="w-full flex items-center justify-center gap-3 bg-white border-2 border-green-500 text-green-700 py-3 rounded-lg font-medium hover:bg-green-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex items-center justify-center gap-3 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             {exported === "csv" ? (
               <>
@@ -253,28 +239,10 @@ export default function ExportPage() {
             )}
           </button>
 
-          <button
-            onClick={handleExportPdf}
-            disabled={filteredRecords.length === 0}
-            className="w-full flex items-center justify-center gap-3 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            {exported === "pdf" ? (
-              <>
-                <Check className="w-5 h-5" />
-                ダウンロード完了
-              </>
-            ) : (
-              <>
-                <FileText className="w-5 h-5" />
-                PDF でエクスポート
-                <Download className="w-4 h-4 opacity-50" />
-              </>
-            )}
-          </button>
         </div>
 
         <p className="text-xs text-gray-400 text-center">
-          CSVはExcelで開けます。PDFは印刷・提出用に便利です。
+          CSVはExcelやGoogleスプレッドシートで開けます。
         </p>
       </div>
 
