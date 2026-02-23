@@ -2,24 +2,26 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import BottomNav from "@/components/BottomNav";
+import ConfirmModal from "@/components/ConfirmModal";
 import Link from "next/link";
 import { Settings, LogOut, User, Download, ChevronRight } from "lucide-react";
 
 export default function SettingsPage() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/");
   }, [user, loading, router]);
 
-  const handleLogout = async () => {
-    if (!confirm("ログアウトしますか？")) return;
+  const handleLogoutConfirm = useCallback(async () => {
+    setShowLogoutConfirm(false);
     await logout();
     router.replace("/");
-  };
+  }, [logout, router]);
 
   if (loading || !user) return null;
 
@@ -61,7 +63,7 @@ export default function SettingsPage() {
             <ChevronRight className="w-4 h-4 text-gray-400" />
           </Link>
           <button
-            onClick={handleLogout}
+            onClick={() => setShowLogoutConfirm(true)}
             className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors"
           >
             <LogOut className="w-5 h-5" />
@@ -73,6 +75,17 @@ export default function SettingsPage() {
       </div>
 
       <BottomNav />
+
+      <ConfirmModal
+        open={showLogoutConfirm}
+        title="ログアウト"
+        message="ログアウトしますか？"
+        confirmLabel="ログアウト"
+        cancelLabel="キャンセル"
+        variant="warning"
+        onConfirm={handleLogoutConfirm}
+        onCancel={() => setShowLogoutConfirm(false)}
+      />
     </div>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Share } from "@/types/record";
 import { createShare, getShareByRecord, deleteShare } from "@/lib/shares";
+import ConfirmModal from "@/components/ConfirmModal";
 import { Share2, Link, Check, X, Loader2 } from "lucide-react";
 
 interface ShareButtonProps {
@@ -16,6 +17,7 @@ export default function ShareButton({ recordDocId, userId }: ShareButtonProps) {
   const [showPanel, setShowPanel] = useState(false);
   const [copied, setCopied] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [showStopConfirm, setShowStopConfirm] = useState(false);
 
   useEffect(() => {
     getShareByRecord(recordDocId)
@@ -36,15 +38,21 @@ export default function ShareButton({ recordDocId, userId }: ShareButtonProps) {
     }
   };
 
-  const handleDeleteShare = async () => {
-    if (!share?.id || !confirm("共有を停止しますか？リンクは無効になります。")) return;
+  const handleDeleteShareClick = () => {
+    if (!share?.id) return;
+    setShowStopConfirm(true);
+  };
+
+  const handleDeleteShareConfirm = useCallback(async () => {
+    if (!share?.id) return;
+    setShowStopConfirm(false);
     try {
       await deleteShare(share.id);
       setShare(null);
     } catch (error) {
       console.error("Failed to delete share:", error);
     }
-  };
+  }, [share?.id]);
 
   const shareUrl = share
     ? `${window.location.origin}/shared/view?id=${share.shareId}`
@@ -95,7 +103,7 @@ export default function ShareButton({ recordDocId, userId }: ShareButtonProps) {
                 </button>
               </div>
               <button
-                onClick={handleDeleteShare}
+                onClick={handleDeleteShareClick}
                 className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700"
               >
                 <X className="w-3.5 h-3.5" />
@@ -118,6 +126,16 @@ export default function ShareButton({ recordDocId, userId }: ShareButtonProps) {
           )}
         </div>
       )}
+      <ConfirmModal
+        open={showStopConfirm}
+        title="共有を停止"
+        message="共有を停止しますか？リンクは無効になります。"
+        confirmLabel="停止する"
+        cancelLabel="キャンセル"
+        variant="warning"
+        onConfirm={handleDeleteShareConfirm}
+        onCancel={() => setShowStopConfirm(false)}
+      />
     </div>
   );
 }
