@@ -261,7 +261,7 @@ export interface UserStats {
   totalCrops: number;
   totalPlots: number;
   cropCounts: { name: string; count: number }[];
-  recentStreak: number; // consecutive days with records ending today/yesterday
+  daysSinceLastRecord: number | null; // null if no records exist
   thisMonthCount: number;
 }
 
@@ -273,31 +273,21 @@ export async function getUserStats(userId: string): Promise<UserStats> {
   const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   let thisMonthCount = 0;
 
-  const recordDates = new Set<string>();
+  let latestDate: Date | null = null;
 
   for (const r of records) {
     cropMap.set(r.crop, (cropMap.get(r.crop) || 0) + 1);
     if (r.plotId) plotSet.add(r.plotId);
     const date = r.createdAt?.toDate?.() ?? new Date();
     if (date >= thisMonthStart) thisMonthCount++;
-    const dayKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
-    recordDates.add(dayKey);
+    if (!latestDate || date > latestDate) latestDate = date;
   }
 
-  // Calculate streak
-  let streak = 0;
-  const check = new Date(now);
-  // Start from today
-  for (let i = 0; i < 365; i++) {
-    const key = `${check.getFullYear()}-${check.getMonth()}-${check.getDate()}`;
-    if (recordDates.has(key)) {
-      streak++;
-    } else if (i === 0) {
-      // today has no record, that's ok, keep checking yesterday
-    } else {
-      break;
-    }
-    check.setDate(check.getDate() - 1);
+  // Calculate days since last record
+  let daysSinceLastRecord: number | null = null;
+  if (latestDate) {
+    const diffMs = now.getTime() - latestDate.getTime();
+    daysSinceLastRecord = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   }
 
   const cropCounts = Array.from(cropMap.entries())
@@ -309,7 +299,7 @@ export async function getUserStats(userId: string): Promise<UserStats> {
     totalCrops: cropMap.size,
     totalPlots: plotSet.size,
     cropCounts,
-    recentStreak: streak,
+    daysSinceLastRecord,
     thisMonthCount,
   };
 }
