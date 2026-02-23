@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - main
+      - claude/add-firestore-records-schema-WshlK
 
 jobs:
   build-and-deploy:
